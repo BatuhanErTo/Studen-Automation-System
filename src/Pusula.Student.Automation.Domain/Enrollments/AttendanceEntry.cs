@@ -8,7 +8,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace Pusula.Student.Automation.Enrollments;
 
-public class AttendanceEntry : Entity<Guid>
+public sealed class AttendanceEntry : Entity<Guid>
 {
     public Guid EnrollmentId { get; private set; }
     public DateOnly Date { get; private set; }            

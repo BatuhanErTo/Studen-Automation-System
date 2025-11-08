@@ -9,7 +9,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace Pusula.Student.Automation.Enrollments;
 
-public class GradeEntry : Entity<Guid>
+public sealed class GradeEntry : Entity<Guid>
 {
     public Guid EnrollmentId { get; private set; }
     public Guid GradeComponentId { get; private set; }

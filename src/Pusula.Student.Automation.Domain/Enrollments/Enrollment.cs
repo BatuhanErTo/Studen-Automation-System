@@ -1,4 +1,5 @@
-﻿using Pusula.Student.Automation.Teachers;
+﻿using Pusula.Student.Automation.Students;
+using Pusula.Student.Automation.Teachers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,11 +10,10 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Pusula.Student.Automation.Enrollments;
 
-public class Enrollment : FullAuditedAggregateRoot<Guid>
+public sealed class Enrollment : FullAuditedAggregateRoot<Guid>
 {
     public Guid StudentId { get; private set; }
     public Guid CourseId { get; private set; }
-
 
     private List<TeacherComment> _teacherComments = new();
     public IReadOnlyList<TeacherComment> TeacherComments => _teacherComments.AsReadOnly();
@@ -43,7 +43,7 @@ public class Enrollment : FullAuditedAggregateRoot<Guid>
         CourseId = courseId;
     }
 
-    #region TeacherComments Management Methods
+#region TeacherComments Management Methods
     public void AddTeacherComment(string comment)
     {
         Check.NotNull(comment, nameof(comment));
@@ -60,9 +60,9 @@ public class Enrollment : FullAuditedAggregateRoot<Guid>
         }
         _teacherComments.Remove(teacherComment);
     }
-    #endregion
+#endregion
 
-    #region GradeEntry Management Methods
+#region GradeEntry Management Methods
     public GradeEntry AddGradeEntry(Guid gradeComponentId, double score)
     {
         if (_gradeEntries.Any(x => x.GradeComponentId == gradeComponentId))
@@ -106,9 +106,9 @@ public class Enrollment : FullAuditedAggregateRoot<Guid>
                 ? (entry.Score * weight) / 100.0
                 : 0);
     }
-    #endregion
+#endregion
 
-    #region AttendanceEntry Management Methods
+#region AttendanceEntry Management Methods
     public AttendanceEntry AddAttendanceEntry(
         DateOnly date, 
         Guid courseSessionId, 
@@ -148,5 +148,5 @@ public class Enrollment : FullAuditedAggregateRoot<Guid>
         _attendanceEntries.Remove(attendanceEntry);
     }
 
-    #endregion
+#endregion
 }

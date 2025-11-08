@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Pusula.Student.Automation.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Pusula.Student.Automation.Migrations
 {
     [DbContext(typeof(AutomationDbContext))]
-    partial class AutomationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106214915_db_design-V3")]
+    partial class db_designV3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -113,6 +116,9 @@ namespace Pusula.Student.Automation.Migrations
                     b.Property<Guid>("CourseId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("CourseId1")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("Day")
                         .HasColumnType("integer")
                         .HasColumnName("Day");
@@ -120,6 +126,8 @@ namespace Pusula.Student.Automation.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
+
+                    b.HasIndex("CourseId1");
 
                     b.ToTable("AppCourseSessions", (string)null);
                 });
@@ -130,6 +138,9 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("CourseId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CourseId1")
                         .HasColumnType("uuid");
 
                     b.Property<string>("GradeComponentName")
@@ -147,6 +158,8 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnName("Weight");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CourseId1");
 
                     b.HasIndex("CourseId", "GradeComponentName")
                         .IsUnique();
@@ -238,9 +251,14 @@ namespace Pusula.Student.Automation.Migrations
                     b.Property<Guid>("EnrollmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("EnrollmentId1")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseSessionId");
+
+                    b.HasIndex("EnrollmentId1");
 
                     b.HasIndex("EnrollmentId", "Date", "CourseSessionId")
                         .IsUnique();
@@ -319,6 +337,9 @@ namespace Pusula.Student.Automation.Migrations
                     b.Property<Guid>("EnrollmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("EnrollmentId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("GradeComponentId")
                         .HasColumnType("uuid");
 
@@ -327,6 +348,8 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnName("Score");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("EnrollmentId1");
 
                     b.HasIndex("GradeComponentId");
 
@@ -350,9 +373,14 @@ namespace Pusula.Student.Automation.Migrations
                     b.Property<Guid>("EnrollmentId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("EnrollmentId1")
+                        .HasColumnType("uuid");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EnrollmentId");
+
+                    b.HasIndex("EnrollmentId1");
 
                     b.ToTable("AppTeacherComments", (string)null);
                 });
@@ -2418,10 +2446,14 @@ namespace Pusula.Student.Automation.Migrations
             modelBuilder.Entity("Pusula.Student.Automation.Courses.CourseSession", b =>
                 {
                     b.HasOne("Pusula.Student.Automation.Courses.Course", null)
-                        .WithMany("CourseSessions")
+                        .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Pusula.Student.Automation.Courses.Course", null)
+                        .WithMany("CourseSessions")
+                        .HasForeignKey("CourseId1");
 
                     b.OwnsOne("Pusula.Student.Automation.ValueObjects.TimeRange", "Time", b1 =>
                         {
@@ -2451,10 +2483,14 @@ namespace Pusula.Student.Automation.Migrations
             modelBuilder.Entity("Pusula.Student.Automation.Courses.GradeComponent", b =>
                 {
                     b.HasOne("Pusula.Student.Automation.Courses.Course", null)
-                        .WithMany("GradeComponents")
+                        .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Pusula.Student.Automation.Courses.Course", null)
+                        .WithMany("GradeComponents")
+                        .HasForeignKey("CourseId1");
                 });
 
             modelBuilder.Entity("Pusula.Student.Automation.Enrollments.AttendanceEntry", b =>
@@ -2466,10 +2502,14 @@ namespace Pusula.Student.Automation.Migrations
                         .IsRequired();
 
                     b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
-                        .WithMany("AttendanceEntries")
+                        .WithMany()
                         .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
+                        .WithMany("AttendanceEntries")
+                        .HasForeignKey("EnrollmentId1");
                 });
 
             modelBuilder.Entity("Pusula.Student.Automation.Enrollments.Enrollment", b =>
@@ -2490,10 +2530,14 @@ namespace Pusula.Student.Automation.Migrations
             modelBuilder.Entity("Pusula.Student.Automation.Enrollments.GradeEntry", b =>
                 {
                     b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
-                        .WithMany("GradeEntries")
+                        .WithMany()
                         .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
+                        .WithMany("GradeEntries")
+                        .HasForeignKey("EnrollmentId1");
 
                     b.HasOne("Pusula.Student.Automation.Courses.GradeComponent", null)
                         .WithMany()
@@ -2505,10 +2549,14 @@ namespace Pusula.Student.Automation.Migrations
             modelBuilder.Entity("Pusula.Student.Automation.Enrollments.TeacherComment", b =>
                 {
                     b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
-                        .WithMany("TeacherComments")
+                        .WithMany()
                         .HasForeignKey("EnrollmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Pusula.Student.Automation.Enrollments.Enrollment", null)
+                        .WithMany("TeacherComments")
+                        .HasForeignKey("EnrollmentId1");
                 });
 
             modelBuilder.Entity("Pusula.Student.Automation.Students.StudentEntity", b =>

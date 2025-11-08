@@ -6,24 +6,23 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 
-namespace Pusula.Student.Automation.Departments
-{
-    public class Department : FullAuditedAggregateRoot<Guid>
-    {
-        public string DepartmentName { get; private set; }
+namespace Pusula.Student.Automation.Departments;
 
-        protected Department() { }
-        public Department(
-            Guid id,
-            string departmentName) : base(id)
-        {
-            SetDepartmentName(departmentName);
-        }
-        public void SetDepartmentName(string departmentName)
-        {
-            Check.NotNull(departmentName, nameof(departmentName));
-            Check.Length(departmentName, nameof(departmentName), DepartmentConsts.MaxDepartmentNameLength, DepartmentConsts.MinDepartmentNameLength);
-            DepartmentName = departmentName;
-        }
+public sealed class Department : FullAuditedAggregateRoot<Guid>
+{
+    public string DepartmentName { get; private set; }
+
+    protected Department() { }
+    public Department(
+        Guid id,
+        string departmentName) : base(id)
+    {
+        SetDepartmentName(departmentName);
+    }
+    public void SetDepartmentName(string departmentName)
+    {
+        Check.NotNull(departmentName, nameof(departmentName));
+        Check.Length(departmentName, nameof(departmentName), DepartmentConsts.MaxDepartmentNameLength, DepartmentConsts.MinDepartmentNameLength);
+        DepartmentName = departmentName;
     }
 }

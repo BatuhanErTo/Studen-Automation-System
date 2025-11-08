@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Pusula.Student.Automation.Enums;
+namespace Pusula.Student.Automation.Students;
 
 public enum EnumGradeYear
 {

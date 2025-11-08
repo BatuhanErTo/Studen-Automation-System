@@ -10,7 +10,7 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Pusula.Student.Automation.Teachers;
 
-public class Teacher : FullAuditedAggregateRoot<Guid>
+public sealed class Teacher : FullAuditedAggregateRoot<Guid>
 {
     [NotNull]
     public string FirstName { get; private set; }

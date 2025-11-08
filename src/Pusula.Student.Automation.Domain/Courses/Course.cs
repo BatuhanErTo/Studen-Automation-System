@@ -13,7 +13,7 @@ using Volo.Abp.Guids;
 
 namespace Pusula.Student.Automation.Courses;
 
-public class Course : FullAuditedAggregateRoot<Guid>
+public sealed class Course : FullAuditedAggregateRoot<Guid>
 {
     [NotNull]
     public string CourseName { get; private set; }
@@ -82,19 +82,19 @@ public class Course : FullAuditedAggregateRoot<Guid>
     }
 
     #region Grade Components Management Methods
-    public GradeComponent AddGradeComponent(Guid gradeComponentId, string name, int order, int weight)
+    public GradeComponent AddGradeComponent(Guid gradeComponentId, string gradeComponentName, int order, int weight)
     {
-        if (_gradeComponents.Any(x => x.GradeComponentName == name))
+        if (_gradeComponents.Any(x => x.GradeComponentName == gradeComponentName))
             throw new BusinessException("Course.GradeComponent.DuplicateName");
 
-        var gradeComponent = new GradeComponent(gradeComponentId, Id, name, order, weight);
+        var gradeComponent = new GradeComponent(gradeComponentId, Id, gradeComponentName, order, weight);
         _gradeComponents.Add(gradeComponent);
 
         EnsureGradeWeightsValid();
         return gradeComponent;
     }
 
-    public void UpdateGradeComponent(Guid id, string name, int order, int weight)
+    public GradeComponent UpdateGradeComponent(Guid id, string name, int order, int weight)
     {
         var gradeComponent = _gradeComponents.FirstOrDefault(x => x.Id == id)
                  ?? throw new BusinessException("Course.GradeComponent.NotFound");
@@ -107,6 +107,7 @@ public class Course : FullAuditedAggregateRoot<Guid>
         gradeComponent.SetWeight(weight);
 
         EnsureGradeWeightsValid();
+        return gradeComponent;
     }
 
     public void RemoveGradeComponent(Guid id)
@@ -115,7 +116,7 @@ public class Course : FullAuditedAggregateRoot<Guid>
         if (gradeComponent != null)
         {
             _gradeComponents.Remove(gradeComponent);
-            EnsureGradeWeightsValid();
+            // Extra logic is needed to handle distribution of weights after deletion. For now, simply remove the componet
         }
     }
     private void EnsureGradeWeightsValid()
@@ -127,7 +128,7 @@ public class Course : FullAuditedAggregateRoot<Guid>
     #endregion
 
     #region Course Sessions Management Methods
-    public CourseSession AddSession(Guid courseSessionId, EnumWeekDay day, TimeRange time)
+    public CourseSession AddCourseSession(Guid courseSessionId, EnumWeekDay day, TimeRange time)
     {
         if (_courseSessions.Any(s => s.Day == day && s.Time.Overlaps(time)))
             throw new BusinessException("Course.SessionOverlap");
@@ -137,7 +138,7 @@ public class Course : FullAuditedAggregateRoot<Guid>
         return courseSession;
     }
 
-    public void UpdateSession(Guid sessionId, EnumWeekDay day, TimeRange time)
+    public CourseSession UpdateCourseSession(Guid sessionId, EnumWeekDay day, TimeRange time)
     {
         var courseSession = _courseSessions.FirstOrDefault(x => x.Id == sessionId)
                 ?? throw new BusinessException("Course.SessionNotFound");
@@ -147,9 +148,11 @@ public class Course : FullAuditedAggregateRoot<Guid>
 
         courseSession.SetDay(day);
         courseSession.SetTime(time);
+
+        return courseSession;
     }
 
-    public void RemoveSession(Guid sessionId)
+    public void RemoveCourseSession(Guid sessionId)
     {
         var courseSession = _courseSessions.FirstOrDefault(x => x.Id == sessionId);
         if (courseSession != null) _courseSessions.Remove(courseSession);

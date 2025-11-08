@@ -19,11 +19,6 @@ public class TeacherConsts
     public const int MinFirstNameLength = 2;
     public const int MaxLastNameLength = 32;
     public const int MinLastNameLength = 2;
-
-
-    public const int MaxAddressLength = 512;
-    public const int MinAddressLength = 10;
-
     public const int MaxEmailAddressLength = 128;
     public const int MinEmailAddressLength = 12;
 

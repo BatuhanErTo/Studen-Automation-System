@@ -12,7 +12,8 @@ using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Pusula.Student.Automation.Students;
 
-public class Student : FullAuditedAggregateRoot<Guid>
+// The name "StudentEntity" is used instead of "Student" to avoid conflicts with namespacing issue because of the solution's name.
+public sealed class StudentEntity : FullAuditedAggregateRoot<Guid>
 {
     [NotNull]
     public string FirstName { get; private set; }
@@ -31,9 +32,9 @@ public class Student : FullAuditedAggregateRoot<Guid>
     public string PhoneNumber { get; private set; }
     public Guid DepartmentId { get; private set; }
 
-    protected Student(){}
+    protected StudentEntity(){}
 
-    public Student(
+    public StudentEntity(
         Guid id,
         string firstName,
         string lastName,

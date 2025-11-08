@@ -9,7 +9,7 @@ using Volo.Abp.Domain.Entities;
 
 namespace Pusula.Student.Automation.Courses;
 
-public class CourseSession : Entity<Guid>
+public sealed class CourseSession : Entity<Guid>
 {
     public Guid CourseId { get; private set; }
     public EnumWeekDay Day { get; private set; }          
