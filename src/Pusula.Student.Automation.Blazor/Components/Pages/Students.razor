@@ -1,0 +1,476 @@
+﻿@page "/students"
+@attribute [Authorize(AutomationPermissions.Students.Default)]
+
+@using Pusula.Student.Automation.Localization
+@using Pusula.Student.Automation.Permissions;
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Departments
+@using Pusula.Student.Automation.Shared;
+@using Pusula.Student.Automation.Enums
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Http.Client
+
+@inherits AutomationComponentBase
+
+@inject IStudentAppService StudentAppService
+@inject IDepartmentAppService DepartmentAppService
+@inject IUiMessageService UiMessageService
+@inject AbpBlazorMessageLocalizerHelper<AutomationResource> LH
+@inject IRemoteServiceConfigurationProvider RemoteServiceConfigurationProvider
+@inject NavigationManager NavigationManager
+
+@* ************************* PAGE HEADER ************************* *@
+<PageHeader Title="@L["Students"]" BreadcrumbItems="BreadcrumbItems" Toolbar="Toolbar">
+</PageHeader>
+
+@* ************************* SEARCH ************************* *@
+<Card>
+    <CardBody>
+        <Form id="StudentSearchForm" class="mb-3">
+            <Addons>
+                <Addon AddonType="AddonType.Body">
+                    <TextEdit @bind-Text="@Filter.FilterText"
+                              Autofocus="true"
+                              Placeholder="@L["Search"]">
+                    </TextEdit>
+                </Addon>
+                <Addon AddonType="AddonType.End">
+                    <SubmitButton Form="StudentSearchForm" Clicked="GetStudentsAsync">
+                        <Icon Name="@IconName.Search" Class="me-1"></Icon>@L["Search"]
+                    </SubmitButton>
+                </Addon>
+            </Addons>
+        </Form>
+
+        <Row Class="mt-3 mb-3">
+            <div class="col-md-12">
+                <a href="javascript:;" class="text-decoration-none" @onclick="() => ShowAdvancedFilters = !ShowAdvancedFilters">@L["SeeAdvancedFilters"]</a>
+            </div>
+        </Row>
+
+        <div style="display: @(!ShowAdvancedFilters ? "none" : "block")">
+            <Row>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["FirstName"]</FieldLabel>
+                        <TextEdit Text="@Filter.FirstName" TextChanged="@OnFirstNameChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["LastName"]</FieldLabel>
+                        <TextEdit Text="@Filter.LastName" TextChanged="@OnLastNameChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["EmailAddress"]</FieldLabel>
+                        <TextEdit Text="@Filter.EmailAddress" TextChanged="@OnEmailAddressChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["MobilePhoneNumber"]</FieldLabel>
+                        <TextEdit Text="@Filter.PhoneNumber" TextChanged="@OnPhoneNumberChangedAsync" />
+                    </Field>
+                </Column>
+            </Row>
+        </div>
+    </CardBody>
+</Card>
+
+@* ************************* DATA GRID ************************* *@
+<Card>
+    <CardBody>
+        @if (SelectedStudents.Any())
+        {
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                @if (AllStudentsSelected)
+                {
+                    <p class="lead mb-0">
+                        @L["AllItemsAreSelected", TotalCount]
+                    </p>
+                }
+                else
+                {
+                    <p class="lead mb-0">
+                        @if (SelectedStudents.Count > 1)
+                        {
+                            @L["NumberOfItemsOnThisPageAreSelected", SelectedStudents.Count]
+                        }
+                        else
+                        {
+                            @L["OneItemOnThisPageIsSelected"]
+                        }
+                    </p>
+                }
+
+                <div>
+                    @if ((SelectedStudents.Count == PageSize || SelectedStudents.Count == StudentList.Count) && TotalCount > SelectedStudents.Count)
+                    {
+                        if (!AllStudentsSelected)
+                        {
+                            <Button Clicked="SelectAllItems" Class="mx-1 btn-outline-secondary">@L["SelectAllItems", TotalCount]</Button>
+                        }
+                        else
+                        {
+                            <Button Clicked="ClearSelection" Class="mx-1 btn-outline-secondary">@L["ClearSelection"]</Button>
+                        }
+                    }
+
+                    <Button Color="Color.Danger" Class="mx-1" Size="Size.Medium" Clicked="DeleteSelectedStudentsAsync">
+                        <Icon Name="@IconName.Delete" /> @L["Delete"]
+                    </Button>
+                </div>
+            </div>
+
+            <hr class="my-1 mx-0" />
+        }
+
+        <DataGrid TItem="StudentWithNavigationPropertiesDto"
+                  Data="StudentList"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  SelectedRows="SelectedStudents"
+                  RowSelectable="@((args) => CanDeleteStudent)"
+                  SelectedRowsChanged="SelectedStudentRowsChanged"
+                  ReadData="OnDataGridReadAsync"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="PageSize"
+                  Class="datagrid-detail">
+            <LoadingTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <RadarSpinner />
+                    </Column>
+                </Row>
+            </LoadingTemplate>
+            <EmptyTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <Heading Size="HeadingSize.Is4" TextAlignment="TextAlignment.Center">@L["NoDataAvailable"]</Heading>
+                    </Column>
+                </Row>
+            </EmptyTemplate>
+            <DataGridColumns>
+
+                @if (CanDeleteStudent && StudentList.Any())
+                {
+                    <DataGridMultiSelectColumn TItem="StudentWithNavigationPropertiesDto" DisplayOrder="-1" Width="30px"></DataGridMultiSelectColumn>
+                }
+
+                <DataGridEntityActionsColumn TItem="StudentWithNavigationPropertiesDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="StudentWithNavigationPropertiesDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="StudentWithNavigationPropertiesDto"
+                                          Visible="@CanEditStudent"
+                                          Clicked="async () => await OpenEditStudentModalAsync(context)"
+                                          Text="@L["Edit"]"></EntityAction>
+                            <EntityAction TItem="StudentWithNavigationPropertiesDto"
+                                          Visible="@CanDeleteStudent"
+                                          Clicked="() => DeleteStudentAsync(context)"
+                                          ConfirmationMessage="@(()=> L["DeleteConfirmationMessage"])"
+                                          Text="@L["Delete"]"></EntityAction>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Field="StudentDto.FirstName"
+                                Caption="@L["FirstName"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.StudentDto.FirstName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Field="StudentDto.LastName"
+                                Caption="@L["LastName"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.StudentDto.LastName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Field="StudentDto.Gender"
+                                Caption="@L["EnumGender"]"
+                                Sortable="false">
+                    <DisplayTemplate>
+                        @context.StudentDto.Gender.ToString()
+                    </DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Field="StudentDto.EmailAddress"
+                                Caption="@L["EmailAddress"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.StudentDto.EmailAddress</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Field="StudentDto.PhoneNumber"
+                                Caption="@L["MobilePhoneNumber"]">
+                    <DisplayTemplate>@context.StudentDto.PhoneNumber</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="StudentWithNavigationPropertiesDto"
+                                Caption="@L["Department"]"
+                                Sortable="false">
+                    <DisplayTemplate>
+                        @(context.DepartmentDto?.DepartmentName ?? context.DepartmentDto?.DepartmentName ?? "-")
+                    </DisplayTemplate>
+                </DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+
+    </CardBody>
+</Card>
+
+@* ************************* CREATE MODAL ************************* *@
+<Modal @ref="CreateStudentModal" Closing="@CreateStudentModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="CreateStudentForm">
+            <ModalHeader>
+                <ModalTitle>@L["NewStudent"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateStudentModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewStudentValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewStudent"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["FirstName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.FirstName"
+                                      MaxLength="StudentConsts.MaxFirstNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["LastName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.LastName"
+                                      MaxLength="StudentConsts.MaxLastNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["IdentityNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.IdentityNumber"
+                                      MaxLength="StudentConsts.IdentityNumberMaxLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EmailAddress"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.EmailAddress"
+                                      MaxLength="StudentConsts.MaxEmailAddressLength"
+                                      Role="TextRole.Email">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["Password"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.Password"
+                                      Role="TextRole.Password"
+                                      Type="TextEditType.Password">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["PhoneNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.PhoneNumber"
+                                      MaxLength="StudentConsts.MaxPhoneNumberLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["Address"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewStudent.Address"
+                                      MaxLength="StudentConsts.MaxAddressLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["BirthDate"]</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@NewStudent.BirthDate" />
+                    </Field>
+
+                    @*
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EnumGender"] *</FieldLabel>
+                            <Select TValue="EnumGender" @bind-Value="NewStudent.Gender">
+                                @foreach (EnumGender g in Enum.GetValues(typeof(EnumGender)))
+                                {
+                                    <SelectItem Value="@g">@L[$"EnumGender:{g}"]</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                    </Validation>
+                    *@
+
+                    <Field>
+                        <FieldLabel>@L["Department"] *</FieldLabel>
+                        <Autocomplete Data="@DepartmentsCollection"
+                                      TItem="LookupDto<Guid>"
+                                      TValue="Guid"
+                                      TextField="@((item) => item?.DisplayName)"
+                                      ValueField="@((item) => item?.Id ?? default)"
+                                      SearchChanged="@GetDepartmentCollectionLookupAsync"
+                                      @bind-SelectedValue="@NewStudent.DepartmentId"
+                                      Placeholder="&#8212;" />
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateStudentModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="CreateStudentForm" Clicked="CreateStudentAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* EDIT MODAL ************************* *@
+<Modal @ref="EditStudentModal" Closing="@EditStudentModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EditStudentForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditStudentModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingStudentValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingStudent"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["FirstName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.FirstName" MaxLength="StudentConsts.MaxFirstNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["LastName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.LastName" MaxLength="StudentConsts.MaxLastNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["IdentityNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.IdentityNumber" MaxLength="StudentConsts.IdentityNumberMaxLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    @*
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EnumGender"] *</FieldLabel>
+                            <Select TValue="EnumGender" @bind-Value="EditingStudent.Gender">
+                                @foreach (EnumGender g in Enum.GetValues(typeof(EnumGender)))
+                                {
+                                    <SelectItem Value="@g">@L[$"EnumGender:{g}"]</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                    </Validation>
+                    *@
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EmailAddress"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.EmailAddress" MaxLength="StudentConsts.MaxEmailAddressLength" Role="TextRole.Email">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["MobilePhoneNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.PhoneNumber" MaxLength="StudentConsts.MaxPhoneNumberLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["Address"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingStudent.Address" MaxLength="StudentConsts.MaxAddressLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["BirthDate"]</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@EditingStudent.BirthDate" />
+                    </Field>
+
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditStudentModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="EditStudentForm" Clicked="UpdateStudentAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+
+                        

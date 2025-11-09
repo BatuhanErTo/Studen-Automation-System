@@ -1,0 +1,378 @@
+﻿@page "/courses"
+@attribute [Authorize(AutomationPermissions.Courses.Default)]
+
+@using Pusula.Student.Automation.Localization
+@using Pusula.Student.Automation.Permissions;
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Shared;
+@using Pusula.Student.Automation.Enums
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Http.Client
+
+@inherits AutomationComponentBase
+
+@inject ICourseAppService CourseAppService
+@inject ITeacherAppService TeacherAppService
+@inject IUiMessageService UiMessageService
+@inject AbpBlazorMessageLocalizerHelper<AutomationResource> LH
+@inject IRemoteServiceConfigurationProvider RemoteServiceConfigurationProvider
+@inject NavigationManager NavigationManager
+
+@* ************************* PAGE HEADER ************************* *@
+<PageHeader Title="@L["Courses"]" BreadcrumbItems="BreadcrumbItems" Toolbar="Toolbar">
+</PageHeader>
+
+@* ************************* SEARCH ************************* *@
+<Card>
+    <CardBody>
+        <Form id="CourseSearchForm" class="mb-3">
+            <Addons>
+                <Addon AddonType="AddonType.Body">
+                    <TextEdit @bind-Text="@Filter.FilterText"
+                              Autofocus="true"
+                              Placeholder="@L["Search"]">
+                    </TextEdit>
+                </Addon>
+                <Addon AddonType="AddonType.End">
+                    <SubmitButton Form="CourseSearchForm" Clicked="GetCoursesAsync">
+                        <Icon Name="@IconName.Search" Class="me-1"></Icon>@L["Search"]
+                    </SubmitButton>
+                </Addon>
+            </Addons>
+        </Form>
+
+        <Row Class="mt-3 mb-3">
+            <div class="col-md-12">
+                <a href="javascript:;" class="text-decoration-none" @onclick="() => ShowAdvancedFilters = !ShowAdvancedFilters">@L["SeeAdvancedFilters"]</a>
+            </div>
+        </Row>
+
+        <div style="display: @(!ShowAdvancedFilters ? "none" : "block")">
+            <Row>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["CourseName"]</FieldLabel>
+                        <TextEdit Text="@Filter.CourseName" TextChanged="@OnCourseNameChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["Credits"]</FieldLabel>
+                        <NumericEdit TValue="int?" Value="Filter.Credits" ValueChanged="OnCreditsChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["StartFrom"]</FieldLabel>
+                        <DateEdit TValue="DateTime?" Date="Filter.StartFrom" DateChanged="OnStartFromChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["EndTo"]</FieldLabel>
+                        <DateEdit TValue="DateTime?" Date="Filter.EndTo" DateChanged="OnEndToChangedAsync" />
+                    </Field>
+                </Column>
+            </Row>
+            <Row>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["Teacher"]</FieldLabel>
+                        <Autocomplete Data="@TeachersCollection"
+                                      TItem="LookupDto<Guid>"
+                                      TValue="Guid?"
+                                      TextField="@((item) => item?.DisplayName)"
+                                      ValueField="@((item) => (Guid?)item.Id)"
+                                      SearchChanged="@GetTeacherCollectionLookupAsync"
+                                      SelectedValue="Filter.TeacherId"
+                                      SelectedValueChanged="OnTeacherFilterChangedAsync"
+                                      Placeholder="&#8212;" />
+                    </Field>
+                </Column>
+            </Row>
+        </div>
+    </CardBody>
+</Card>
+
+@* ************************* DATA GRID ************************* *@
+<Card>
+    <CardBody>
+        @if (SelectedCourses.Any())
+        {
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                @if (AllCoursesSelected)
+                {
+                    <p class="lead mb-0">
+                        @L["AllItemsAreSelected", TotalCount]
+                    </p>
+                }
+                else
+                {
+                    <p class="lead mb-0">
+                        @if (SelectedCourses.Count > 1)
+                        {
+                            @L["NumberOfItemsOnThisPageAreSelected", SelectedCourses.Count]
+                        }
+                        else
+                        {
+                            @L["OneItemOnThisPageIsSelected"]
+                        }
+                    </p>
+                }
+
+                <div>
+                    @if ((SelectedCourses.Count == PageSize || SelectedCourses.Count == CourseList.Count) && TotalCount > SelectedCourses.Count)
+                    {
+                        if (!AllCoursesSelected)
+                        {
+                            <Button Clicked="SelectAllItems" Class="mx-1 btn-outline-secondary">@L["SelectAllItems", TotalCount]</Button>
+                        }
+                        else
+                        {
+                            <Button Clicked="ClearSelection" Class="mx-1 btn-outline-secondary">@L["ClearSelection"]</Button>
+                        }
+                    }
+
+                    <Button Color="Color.Danger" Class="mx-1" Size="Size.Medium" Clicked="DeleteSelectedCoursesAsync">
+                        <Icon Name="@IconName.Delete" /> @L["Delete"]
+                    </Button>
+                </div>
+            </div>
+
+            <hr class="my-1 mx-0" />
+        }
+
+        <DataGrid TItem="CourseDto"
+                  Data="CourseList"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  SelectedRows="SelectedCourses"
+                  RowSelectable="@((args) => CanDeleteCourse)"
+                  SelectedRowsChanged="SelectedCourseRowsChanged"
+                  ReadData="OnDataGridReadAsync"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="PageSize"
+                  Class="datagrid-detail">
+            <LoadingTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <RadarSpinner />
+                    </Column>
+                </Row>
+            </LoadingTemplate>
+            <EmptyTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <Heading Size="HeadingSize.Is4" TextAlignment="TextAlignment.Center">@L["NoDataAvailable"]</Heading>
+                    </Column>
+                </Row>
+            </EmptyTemplate>
+            <DataGridColumns>
+
+                @if (CanDeleteCourse && CourseList.Any())
+                {
+                    <DataGridMultiSelectColumn TItem="CourseDto" DisplayOrder="-1" Width="30px"></DataGridMultiSelectColumn>
+                }
+
+                <DataGridEntityActionsColumn TItem="CourseDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="CourseDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="CourseDto"
+                                          Visible="@CanEditCourse"
+                                          Clicked="async () => await OpenEditCourseModalAsync(context)"
+                                          Text="@L["Edit"]"></EntityAction>
+                            <EntityAction TItem="CourseDto"
+                                          Visible="@CanDeleteCourse"
+                                          Clicked="() => DeleteCourseAsync(context)"
+                                          ConfirmationMessage="@(()=> L["DeleteConfirmationMessage"])"
+                                          Text="@L["Delete"]"></EntityAction>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Field="CourseName"
+                                Caption="@L["CourseName"]">
+                    <DisplayTemplate>@context.CourseName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Field="Credits"
+                                Caption="@L["Credits"]">
+                    <DisplayTemplate>@context.Credits</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Field="Status"
+                                Caption="@L["Status"]">
+                    <DisplayTemplate>@context.Status.ToString()</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Field="StartFrom"
+                                Caption="@L["StartFrom"]">
+                    <DisplayTemplate>@context.StartFrom.ToShortDateString()</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Field="EndTo"
+                                Caption="@L["EndTo"]">
+                    <DisplayTemplate>@context.EndTo.ToShortDateString()</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto"
+                                Caption="@L["Teacher"]">
+                    <DisplayTemplate>
+                        @(TeacherNameLookup.TryGetValue(context.TeacherId, out var name) ? name : context.TeacherId.ToString())
+                    </DisplayTemplate>
+                </DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+
+    </CardBody>
+</Card>
+
+@* ************************* CREATE MODAL ************************* *@
+<Modal @ref="CreateCourseModal" Closing="@CreateCourseModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="CreateCourseForm">
+            <ModalHeader>
+                <ModalTitle>@L["NewCourse"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateCourseModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewCourseValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewCourse"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["CourseName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewCourse.CourseName"
+                                      MaxLength="CourseConsts.MaxCourseNameLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["Credits"] *</FieldLabel>
+                        <NumericEdit TValue="int" @bind-Value="@NewCourse.Credits" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["StartFrom"] *</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@NewCourse.StartFrom" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["EndTo"] *</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@NewCourse.EndTo" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["Status"] *</FieldLabel>
+                        <Select TValue="EnumCourseStatus" @bind-Value="NewCourse.Status">
+                            @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
+                            {
+                                <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["Teacher"] *</FieldLabel>
+                        <Select TValue="Guid" @bind-Value="NewCourse.TeacherId">
+                            @foreach (var t in TeachersCollection)
+                            {
+                                <SelectItem Value="@t.Id">@t.DisplayName</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateCourseModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="CreateCourseForm" Clicked="CreateCourseAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* EDIT MODAL ************************* *@
+<Modal @ref="EditCourseModal" Closing="@EditCourseModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EditCourseForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditCourseModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingCourseValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingCourse"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["CourseName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingCourse.CourseName" MaxLength="CourseConsts.MaxCourseNameLength">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Field>
+                        <FieldLabel>@L["Credits"] *</FieldLabel>
+                        <NumericEdit TValue="int" @bind-Value="@EditingCourse.Credits" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["StartFrom"] *</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@EditingCourse.StartFrom" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["EndTo"] *</FieldLabel>
+                        <DateEdit TValue="DateTime" @bind-Date="@EditingCourse.EndTo" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["Status"] *</FieldLabel>
+                        <Select TValue="EnumCourseStatus" @bind-Value="EditingCourse.Status">
+                            @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
+                            {
+                                <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["Teacher"] *</FieldLabel>
+                        <Select TValue="Guid" @bind-Value="EditingCourse.TeacherId">
+                            @foreach (var t in TeachersCollection)
+                            {
+                                <SelectItem Value="@t.Id">@t.DisplayName</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditCourseModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="EditCourseForm" Clicked="UpdateCourseAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>

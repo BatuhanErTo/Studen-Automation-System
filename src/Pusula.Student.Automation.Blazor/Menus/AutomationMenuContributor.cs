@@ -58,6 +58,23 @@ public class AutomationMenuContributor : IMenuContributor
                 url: "/teachers",
                 icon: "fa fa-file-alt",
                 requiredPermissionName: AutomationPermissions.Teachers.Default)
+            );
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                AutomationMenus.Students,
+                l["Menu:Students"],
+                url: "/students",
+                icon: "fa fa-user-graduate",
+                requiredPermissionName: AutomationPermissions.Students.Default)
+        );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                AutomationMenus.Courses,
+                l["Menu:Courses"],
+                url: "/courses",
+                icon: "fa fa-book",
+                requiredPermissionName: AutomationPermissions.Courses.Default)
         );
 
         return Task.CompletedTask;
