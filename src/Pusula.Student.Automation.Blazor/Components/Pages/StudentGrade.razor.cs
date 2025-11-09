@@ -37,64 +37,70 @@ public partial class StudentGrade
 
     protected override async Task OnInitializedAsync()
     {
-        var email = CurrentUser.Email ?? string.Empty;
-
-        var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            EmailAddress = email,
-            MaxResultCount = 1
+            var email = CurrentUser.Email ?? string.Empty;
+
+            var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+            {
+                EmailAddress = email,
+                MaxResultCount = 1
+            });
+
+            var student = students.Items.FirstOrDefault();
+            _studentId = student?.StudentDto.Id;
+
+            if (_studentId.HasValue)
+            {
+                await LoadGradesAsync(_studentId.Value);
+            }
         });
-
-        var student = students.Items.FirstOrDefault();
-        _studentId = student?.StudentDto.Id;
-
-        if (_studentId.HasValue)
-        {
-            await LoadGradesAsync(_studentId.Value);
-        }
 
         _loaded = true;
     }
 
     private async Task LoadGradesAsync(Guid studentId)
     {
-        _courseGrades.Clear();
-
-        var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            StudentId = studentId,
-            MaxResultCount = 1000
-        });
+            _courseGrades.Clear();
 
-        foreach (var enrollment in enrollments.Items)
-        {
-            var course = await CourseAppService.GetAsync(enrollment.CourseDto.Id);
-            var gradeComponents = course.GradeComponents ?? new List<GradeComponentDto>();
-
-            var gradeEntryList = await EnrollmentAppService.GetGradesAsync(enrollment.CourseDto.Id, studentId);
-
-            var courseGradesVm = new CourseGradesVm
+            var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
             {
-                EnrollmentId = enrollment.EnrollmentDto.Id,
-                CourseId = enrollment.CourseDto.Id,
-                CourseName = enrollment.CourseDto.CourseName
-            };
+                StudentId = studentId,
+                MaxResultCount = 1000
+            });
 
-            foreach (var gradeEntry in gradeEntryList)
+            foreach (var enrollment in enrollments.Items)
             {
-                var comp = gradeComponents.FirstOrDefault(gc => gc.Id == gradeEntry.GradeComponentId);
-                courseGradesVm.Grades.Add(new GradeRowVm
+                var course = await CourseAppService.GetAsync(enrollment.CourseDto.Id);
+                var gradeComponents = course.GradeComponents ?? new List<GradeComponentDto>();
+
+                var gradeEntryList = await EnrollmentAppService.GetGradesAsync(enrollment.CourseDto.Id, studentId);
+
+                var courseGradesVm = new CourseGradesVm
                 {
-                    GradeComponentId = gradeEntry.GradeComponentId,
-                    ComponentName = comp?.GradeComponentName ?? gradeEntry.GradeComponentId.ToString(),
-                    Weight = comp?.Weight ?? 0,
-                    Score = gradeEntry.Score
-                });
+                    EnrollmentId = enrollment.EnrollmentDto.Id,
+                    CourseId = enrollment.CourseDto.Id,
+                    CourseName = enrollment.CourseDto.CourseName
+                };
+
+                foreach (var gradeEntry in gradeEntryList)
+                {
+                    var comp = gradeComponents.FirstOrDefault(gc => gc.Id == gradeEntry.GradeComponentId);
+                    courseGradesVm.Grades.Add(new GradeRowVm
+                    {
+                        GradeComponentId = gradeEntry.GradeComponentId,
+                        ComponentName = comp?.GradeComponentName ?? gradeEntry.GradeComponentId.ToString(),
+                        Weight = comp?.Weight ?? 0,
+                        Score = gradeEntry.Score
+                    });
+                }
+
+                courseGradesVm.TotalScore = await EnrollmentAppService.GetTotalScoreAsync(courseGradesVm.EnrollmentId);
+
+                _courseGrades.Add(courseGradesVm);
             }
-
-            courseGradesVm.TotalScore = await EnrollmentAppService.GetTotalScoreAsync(courseGradesVm.EnrollmentId);
-
-            _courseGrades.Add(courseGradesVm);
-        }
+        });
     }
 }

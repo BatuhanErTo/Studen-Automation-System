@@ -1,0 +1,41 @@
+name: student-automation
+services:
+  postgres:
+    image: postgres
+    container_name: pth_postgres
+    restart: always
+    volumes:
+      - pthpostgresdata:/var/lib/postgresql
+    command: postgres -c 'max_connections=250'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: Automation
+      TZ: Europe/Istanbul 
+    ports:
+      - "5432:5432"
+    networks: 
+      - pth-network
+
+  pgadmin4:
+    image: dpage/pgadmin4
+    container_name: pth_pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: training@pusulayazilim.com.tr
+      PGADMIN_DEFAULT_PASSWORD: myPassw0rd
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    volumes:
+      - pthpgadmin4data:/var/lib/pgadmin
+    networks: 
+      - pth-network
+
+volumes:
+  pthpostgresdata:
+  pthpgadmin4data:  
+networks:
+  pth-network:
+    name: student-automation-network
+    driver: bridge

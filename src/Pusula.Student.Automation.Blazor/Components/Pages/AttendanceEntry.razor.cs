@@ -37,28 +37,34 @@ public partial class AttendanceEntry
 
     protected override async Task OnInitializedAsync()
     {
-        var userEmail = CurrentUser.Email ?? string.Empty;
-        var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+        await ExecuteSafeAsync(async () =>
         {
-            EmailAddress = userEmail,
-            MaxResultCount = 1
-        });
-        CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
+            var userEmail = CurrentUser.Email ?? string.Empty;
+            var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+            {
+                EmailAddress = userEmail,
+                MaxResultCount = 1
+            });
+            CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
 
-        if (CurrentTeacherId.HasValue)
-        {
-            await LoadCoursesAsync(CurrentTeacherId.Value);
-        }
+            if (CurrentTeacherId.HasValue)
+            {
+                await LoadCoursesAsync(CurrentTeacherId.Value);
+            }
+        });
     }
 
     private async Task LoadCoursesAsync(Guid teacherId)
     {
-        var result = await CourseAppService.GetListAsync(new GetCoursesInput
+        await ExecuteSafeAsync(async () =>
         {
-            TeacherId = teacherId,
-            MaxResultCount = 1000
+            var result = await CourseAppService.GetListAsync(new GetCoursesInput
+            {
+                TeacherId = teacherId,
+                MaxResultCount = 1000
+            });
+            TeacherCourses = result.Items;
         });
-        TeacherCourses = result.Items;
     }
 
     private async Task OnCourseChanged(Guid value)
@@ -80,23 +86,29 @@ public partial class AttendanceEntry
 
     private async Task LoadStudentsForCourseAsync(Guid courseId)
     {
-        var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            CourseId = courseId,
-            MaxResultCount = 1000
-        });
+            var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+            {
+                CourseId = courseId,
+                MaxResultCount = 1000
+            });
 
-        EnrolledStudents = enrollments.Items
-            .Select(x => x.StudentDto)
-            .DistinctBy(s => s.Id)
-            .ToList();
+            EnrolledStudents = enrollments.Items
+                .Select(x => x.StudentDto)
+                .DistinctBy(s => s.Id)
+                .ToList();
+        });
     }
 
     private async Task LoadCourseSessionsAsync(Guid courseId)
     {
-        var course = await CourseAppService.GetAsync(courseId);
-        CourseSessions = course.CourseSessions?.OrderBy(cs => cs.Day).ThenBy(cs => cs.Time.Start).ToList()
-                         ?? new List<CourseSessionDto>();
+        await ExecuteSafeAsync(async () =>
+        {
+            var course = await CourseAppService.GetAsync(courseId);
+            CourseSessions = course.CourseSessions?.OrderBy(cs => cs.Day).ThenBy(cs => cs.Time.Start).ToList()
+                             ?? new List<CourseSessionDto>();
+        });
     }
 
     private async Task OnStudentChanged(Guid value)
@@ -105,11 +117,14 @@ public partial class AttendanceEntry
         SelectedCourseSessionId = Guid.Empty;
         CurrentEnrollmentId = null;
 
-        if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        await ExecuteSafeAsync(async () =>
         {
-            var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
-            CurrentEnrollmentId = enrollment.Id;
-        }
+            if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+            {
+                var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
+                CurrentEnrollmentId = enrollment.Id;
+            }
+        });
     }
 
     private Task OnCourseSessionChanged(Guid value)
@@ -127,21 +142,24 @@ public partial class AttendanceEntry
 
     private async Task SaveAttendanceAsync()
     {
-        if (CurrentEnrollmentId is null || SelectedCourseSessionId == Guid.Empty)
-            return;
-
-        await EnrollmentAppService.AddAttendanceEntryAsync(new AttendanceEntryCreateDto
+        await ExecuteSafeAsync(async () =>
         {
-            EnrollmentId = CurrentEnrollmentId.Value,
-            Date = Date,
-            CourseSessionId = SelectedCourseSessionId,
-            AttendanceStatus = (EnumAttendanceStatus)SelectedAttendanceStatus,
-            AbsentReason = AbsentReason
-        });
+            if (CurrentEnrollmentId is null || SelectedCourseSessionId == Guid.Empty)
+                return;
 
-        await UiMessageService.Success("Attendance saved");
-        // Optionally reset just the status/reason
-        SelectedAttendanceStatus = 0;
-        AbsentReason = null;
+            await EnrollmentAppService.AddAttendanceEntryAsync(new AttendanceEntryCreateDto
+            {
+                EnrollmentId = CurrentEnrollmentId.Value,
+                Date = Date,
+                CourseSessionId = SelectedCourseSessionId,
+                AttendanceStatus = (EnumAttendanceStatus)SelectedAttendanceStatus,
+                AbsentReason = AbsentReason
+            });
+
+            await UiMessageService.Success("Attendance saved");
+            // Optionally reset just the status/reason
+            SelectedAttendanceStatus = 0;
+            AbsentReason = null;
+        });
     }
 }

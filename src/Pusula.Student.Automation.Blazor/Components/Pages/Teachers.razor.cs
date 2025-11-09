@@ -137,7 +137,7 @@ public partial class Teachers
     }
     private async Task UpdateTeacherAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await EditingTeacherValidations.ValidateAll() == false)
             {
@@ -147,15 +147,11 @@ public partial class Teachers
             await TeacherAppService.UpdateAsync(EditingTeacherId, EditingTeacher);
             await GetTeachersAsync();
             await EditTeacherModal.Hide();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
     private async Task CreateTeacherAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await NewTeacherValidations.ValidateAll() == false)
             {
@@ -164,16 +160,15 @@ public partial class Teachers
             await TeacherAppService.CreateAsync(NewTeacher);
             await GetTeachersAsync();
             await CloseCreateTeacherModalAsync();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
     private async Task DeleteTeacherAsync(TeacherWithNavigationPropertiesDto input)
     {
-        await TeacherAppService.DeleteAsync(input.TeacherDto.Id);
-        await GetTeachersAsync();
+        await ExecuteSafeAsync(async () =>
+        {
+            await TeacherAppService.DeleteAsync(input.TeacherDto.Id);
+            await GetTeachersAsync();
+        });
     }
 
     private Task SelectedTeacherRowsChanged()
@@ -252,21 +247,24 @@ public partial class Teachers
 
     private async Task DeleteSelectedTeachersAsync()
     {
-        var message = AllTeachersSelected ? L["DeleteAllRecords"].Value : L["DeleteSelectedRecords", SelectedTeachers.Count].Value;
-
-        if (!await UiMessageService.Confirm(message))
+        await ExecuteSafeAsync(async () =>
         {
-            return;
-        }
+            var message = AllTeachersSelected ? L["DeleteAllRecords"].Value : L["DeleteSelectedRecords", SelectedTeachers.Count].Value;
 
-        if (AllTeachersSelected)
-            await TeacherAppService.DeleteAllAsync(Filter);
-        else
-            await TeacherAppService.DeleteByIdsAsync(SelectedTeachers.Select(x => x.TeacherDto.Id).ToList());
+            if (!await UiMessageService.Confirm(message))
+            {
+                return;
+            }
 
-        SelectedTeachers.Clear();
-        AllTeachersSelected = false;
+            if (AllTeachersSelected)
+                await TeacherAppService.DeleteAllAsync(Filter);
+            else
+                await TeacherAppService.DeleteByIdsAsync(SelectedTeachers.Select(x => x.TeacherDto.Id).ToList());
 
-        await GetTeachersAsync();
+            SelectedTeachers.Clear();
+            AllTeachersSelected = false;
+
+            await GetTeachersAsync();
+        });
     }
 }

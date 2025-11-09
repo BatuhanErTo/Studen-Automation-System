@@ -32,28 +32,34 @@ public partial class TeacherComment
 
     protected override async Task OnInitializedAsync()
     {
-        var userEmail = CurrentUser.Email ?? string.Empty;
-        var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+        await ExecuteSafeAsync(async () =>
         {
-            EmailAddress = userEmail,
-            MaxResultCount = 1
-        });
-        CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
+            var userEmail = CurrentUser.Email ?? string.Empty;
+            var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+            {
+                EmailAddress = userEmail,
+                MaxResultCount = 1
+            });
+            CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
 
-        if (CurrentTeacherId.HasValue)
-        {
-            await LoadCoursesAsync(CurrentTeacherId.Value);
-        }
+            if (CurrentTeacherId.HasValue)
+            {
+                await LoadCoursesAsync(CurrentTeacherId.Value);
+            }
+        });
     }
 
     private async Task LoadCoursesAsync(Guid teacherId)
     {
-        var result = await CourseAppService.GetListAsync(new GetCoursesInput
+        await ExecuteSafeAsync(async () =>
         {
-            TeacherId = teacherId,
-            MaxResultCount = 1000
+            var result = await CourseAppService.GetListAsync(new GetCoursesInput
+            {
+                TeacherId = teacherId,
+                MaxResultCount = 1000
+            });
+            TeacherCourses = result.Items;
         });
-        TeacherCourses = result.Items;
     }
 
     private async Task OnCourseChanged(Guid value)
@@ -74,16 +80,19 @@ public partial class TeacherComment
 
     private async Task LoadStudentsForCourseAsync(Guid courseId)
     {
-        var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            CourseId = courseId,
-            MaxResultCount = 1000
-        });
+            var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+            {
+                CourseId = courseId,
+                MaxResultCount = 1000
+            });
 
-        EnrolledStudents = enrollments.Items
-            .Select(x => x.StudentDto)
-            .DistinctBy(s => s.Id)
-            .ToList();
+            EnrolledStudents = enrollments.Items
+                .Select(x => x.StudentDto)
+                .DistinctBy(s => s.Id)
+                .ToList();
+        });
     }
 
     private async Task OnStudentChanged(Guid value)
@@ -93,46 +102,58 @@ public partial class TeacherComment
         Comments.Clear();
         NewCommentText = string.Empty;
 
-        if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        await ExecuteSafeAsync(async () =>
         {
-            var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
-            CurrentEnrollmentId = enrollment.Id;
+            if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+            {
+                var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
+                CurrentEnrollmentId = enrollment.Id;
 
-            await LoadCommentsAsync();
-        }
+                await LoadCommentsAsync();
+            }
+        });
     }
 
     private async Task LoadCommentsAsync()
     {
-        if (SelectedCourseIdValue == Guid.Empty || SelectedStudentIdValue == Guid.Empty)
-            return;
+        await ExecuteSafeAsync(async () =>
+        {
+            if (SelectedCourseIdValue == Guid.Empty || SelectedStudentIdValue == Guid.Empty)
+                return;
 
-        var list = await EnrollmentAppService.GetTeacherCommentsAsync(SelectedCourseIdValue, SelectedStudentIdValue);
-        Comments = list.OrderByDescending(c => c.Id).ToList();
+            var list = await EnrollmentAppService.GetTeacherCommentsAsync(SelectedCourseIdValue, SelectedStudentIdValue);
+            Comments = list.OrderByDescending(c => c.Id).ToList();
+        });
     }
 
     private async Task SaveTeacherCommentAsync()
     {
-        if (CurrentEnrollmentId is null || string.IsNullOrWhiteSpace(NewCommentText))
-            return;
-
-        await EnrollmentAppService.AddTeacherCommentAsync(new TeacherCommentCreateDto
+        await ExecuteSafeAsync(async () =>
         {
-            EnrollmentId = CurrentEnrollmentId.Value,
-            Comment = NewCommentText.Trim()
-        });
+            if (CurrentEnrollmentId is null || string.IsNullOrWhiteSpace(NewCommentText))
+                return;
 
-        NewCommentText = string.Empty;
-        await LoadCommentsAsync();
-        await UiMessageService.Success("Comment added");
+            await EnrollmentAppService.AddTeacherCommentAsync(new TeacherCommentCreateDto
+            {
+                EnrollmentId = CurrentEnrollmentId.Value,
+                Comment = NewCommentText.Trim()
+            });
+
+            NewCommentText = string.Empty;
+            await LoadCommentsAsync();
+            await UiMessageService.Success("Comment added");
+        });
     }
 
     private async Task RemoveCommentAsync(Guid commentId)
     {
-        if (CurrentEnrollmentId is null)
-            return;
+        await ExecuteSafeAsync(async () =>
+        {
+            if (CurrentEnrollmentId is null)
+                return;
 
-        await EnrollmentAppService.RemoveTeacherCommentAsync(CurrentEnrollmentId.Value, commentId);
-        await LoadCommentsAsync();
+            await EnrollmentAppService.RemoveTeacherCommentAsync(CurrentEnrollmentId.Value, commentId);
+            await LoadCommentsAsync();
+        });
     }
 }

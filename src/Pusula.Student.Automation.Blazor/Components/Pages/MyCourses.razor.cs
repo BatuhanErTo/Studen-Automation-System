@@ -208,14 +208,17 @@ public partial class MyCourses
 
     private async Task SaveStatusFromModalAsync()
     {
-        if (SelectedCourseIdForEdit is null)
-            return;
+        await ExecuteSafeAsync(async () =>
+        {
+            if (SelectedCourseIdForEdit is null)
+                return;
 
-        var enumStatus = (EnumCourseStatus)SelectedStatusValue;
-        EditingStatuses[SelectedCourseIdForEdit.Value] = enumStatus;
+            var enumStatus = (EnumCourseStatus)SelectedStatusValue;
+            EditingStatuses[SelectedCourseIdForEdit.Value] = enumStatus;
 
-        await SaveStatusAsync(SelectedCourseIdForEdit.Value);
-        await EditStatusModal.Hide();
+            await SaveStatusAsync(SelectedCourseIdForEdit.Value);
+            await EditStatusModal.Hide();
+        });
     }
 
     // ----- Add Session Modal flows -----
@@ -259,13 +262,16 @@ public partial class MyCourses
     }
     private async Task SaveSessionAsync()
     {
-        if (SelectedCourseIdForSession is null) return;
+        await ExecuteSafeAsync(async () =>
+        {
+            if (SelectedCourseIdForSession is null) return;
 
-        CurrentSession.Day = (EnumWeekDay)SelectedDayValue;
+            CurrentSession.Day = (EnumWeekDay)SelectedDayValue;
 
-        SessionInputs[SelectedCourseIdForSession.Value] = CurrentSession;
-        await CourseAppService.AddCourseSessionAsync(CurrentSession);
-        await AddSessionModal.Hide();
+            SessionInputs[SelectedCourseIdForSession.Value] = CurrentSession;
+            await CourseAppService.AddCourseSessionAsync(CurrentSession);
+            await AddSessionModal.Hide();
+        });
     }
 
     // ----- Add Grade Modal flows -----
@@ -303,12 +309,15 @@ public partial class MyCourses
 
     private async Task SaveGradeAsync()
     {
-        if (SelectedCourseIdForGrade is null)
-            return;
+        await ExecuteSafeAsync(async () =>
+        {
+            if (SelectedCourseIdForGrade is null)
+                return;
 
-        GradeInputs[SelectedCourseIdForGrade.Value] = CurrentGrade;
-        await CourseAppService.AddGradeComponentAsync(CurrentGrade);
-        await AddGradeModal.Hide();
+            GradeInputs[SelectedCourseIdForGrade.Value] = CurrentGrade;
+            await CourseAppService.AddGradeComponentAsync(CurrentGrade);
+            await AddGradeModal.Hide();
+        });
     }
     // ----- Details Modal flows -----
     private async Task OpenDetailsModalAsync(Guid courseId)
@@ -359,23 +368,26 @@ public partial class MyCourses
 
     private async Task OnStudentDataGridReadAsync(DataGridReadDataEventArgs<StudentDto> e)
     {
-        if (SelectedCourseIdForEnroll is null)
+        await ExecuteSafeAsync(async () =>
         {
-            AvailableStudents = Array.Empty<StudentDto>();
-            StudentTotalCount = 0;
-            return;
-        }
+            if (SelectedCourseIdForEnroll is null)
+            {
+                AvailableStudents = Array.Empty<StudentDto>();
+                StudentTotalCount = 0;
+                return;
+            }
 
-        StudentCurrentPage = e.Page;
-        var skip = (StudentCurrentPage - 1) * StudentPageSize;
-        var result = await StudentAppService.GetAvailableStudentListAsync(
-            SelectedCourseIdForEnroll.Value,
-            StudentFilterText,
-            skip,
-            StudentPageSize);
+            StudentCurrentPage = e.Page;
+            var skip = (StudentCurrentPage - 1) * StudentPageSize;
+            var result = await StudentAppService.GetAvailableStudentListAsync(
+                SelectedCourseIdForEnroll.Value,
+                StudentFilterText,
+                skip,
+                StudentPageSize);
 
-        AvailableStudents = result.Items;
-        StudentTotalCount = (int)result.TotalCount;
+            AvailableStudents = result.Items;
+            StudentTotalCount = (int)result.TotalCount;
+        });
     }
 
     private void OnStudentRowClicked(DataGridRowMouseEventArgs<StudentDto> e)
@@ -392,16 +404,19 @@ public partial class MyCourses
     }
     private async Task CreateEnrollmentAsync()
     {
-        if (SelectedCourseIdForEnroll is null || SelectedStudentIdValue == Guid.Empty)
-            return;
-
-        await EnrollmentAppService.CreateAsync(new EnrollmentCreateDto
+        await ExecuteSafeAsync(async () =>
         {
-            CourseId = SelectedCourseIdForEnroll.Value,
-            StudentId = SelectedStudentIdValue
-        });
+            if (SelectedCourseIdForEnroll is null || SelectedStudentIdValue == Guid.Empty)
+                return;
 
-        await UiMessageService.Success(L["SuccessfullyCompleted"].Value);
-        await CloseEnrollModalAsync();
+            await EnrollmentAppService.CreateAsync(new EnrollmentCreateDto
+            {
+                CourseId = SelectedCourseIdForEnroll.Value,
+                StudentId = SelectedStudentIdValue
+            });
+
+            await UiMessageService.Success(L["SuccessfullyCompleted"].Value);
+            await CloseEnrollModalAsync();
+        });
     }
 }

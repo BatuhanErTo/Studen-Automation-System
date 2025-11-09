@@ -152,7 +152,7 @@ public partial class Courses
 
     private async Task UpdateCourseAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await EditingCourseValidations.ValidateAll() == false)
             {
@@ -162,16 +162,12 @@ public partial class Courses
             await CourseAppService.UpdateAsync(EditingCourseId, EditingCourse);
             await GetCoursesAsync();
             await EditCourseModal.Hide();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
 
     private async Task CreateCourseAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await NewCourseValidations.ValidateAll() == false)
             {
@@ -181,17 +177,16 @@ public partial class Courses
             await CourseAppService.CreateAsync(NewCourse);
             await GetCoursesAsync();
             await CloseCreateCourseModalAsync();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
 
     private async Task DeleteCourseAsync(CourseDto input)
     {
-        await CourseAppService.DeleteAsync(input.Id);
-        await GetCoursesAsync();
+        await ExecuteSafeAsync(async () =>
+        {
+            await CourseAppService.DeleteAsync(input.Id);
+            await GetCoursesAsync();
+        });
     }
 
     private Task SelectedCourseRowsChanged()

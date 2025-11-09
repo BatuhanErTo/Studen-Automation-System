@@ -3,13 +3,11 @@ using Pusula.Student.Automation.Helper.Identity;
 using Pusula.Student.Automation.Localization;
 using System;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Guids;
 using Volo.Abp.Identity;
-using Volo.Abp.MultiTenancy;
 
 namespace Pusula.Student.Automation.Helpers;
 

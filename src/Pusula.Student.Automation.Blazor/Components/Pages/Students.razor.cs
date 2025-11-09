@@ -133,7 +133,7 @@ public partial class Students
 
     private async Task UpdateStudentAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await EditingStudentValidations.ValidateAll() == false)
             {
@@ -143,16 +143,12 @@ public partial class Students
             await StudentAppService.UpdateAsync(EditingStudentId, EditingStudent);
             await GetStudentsAsync();
             await EditStudentModal.Hide();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
 
     private async Task CreateStudentAsync()
     {
-        try
+        await ExecuteSafeAsync(async () =>
         {
             if (await NewStudentValidations.ValidateAll() == false)
             {
@@ -161,17 +157,16 @@ public partial class Students
             await StudentAppService.CreateAsync(NewStudent);
             await GetStudentsAsync();
             await CloseCreateStudentModalAsync();
-        }
-        catch (Exception ex)
-        {
-            await HandleErrorAsync(ex);
-        }
+        });
     }
 
     private async Task DeleteStudentAsync(StudentWithNavigationPropertiesDto input)
     {
-        await StudentAppService.DeleteAsync(input.StudentDto.Id);
-        await GetStudentsAsync();
+        await ExecuteSafeAsync(async () =>
+        {
+            await StudentAppService.DeleteAsync(input.StudentDto.Id);
+            await GetStudentsAsync();
+        });
     }
 
     private Task SelectedStudentRowsChanged()
@@ -256,32 +251,35 @@ public partial class Students
 
     private async Task DeleteSelectedStudentsAsync()
     {
-        var message = AllStudentsSelected ? L["DeleteAllRecords"].Value : L["DeleteSelectedRecords", SelectedStudents.Count].Value;
-
-        if (!await UiMessageService.Confirm(message))
+        await ExecuteSafeAsync(async () =>
         {
-            return;
-        }
+            var message = AllStudentsSelected ? L["DeleteAllRecords"].Value : L["DeleteSelectedRecords", SelectedStudents.Count].Value;
 
-        // No bulk delete API on students: delete one by one based on current selection or by current page when 'all' toggled.
-        if (AllStudentsSelected)
-        {
-            foreach (var s in StudentList.ToList())
+            if (!await UiMessageService.Confirm(message))
             {
-                await StudentAppService.DeleteAsync(s.StudentDto.Id);
+                return;
             }
-        }
-        else
-        {
-            foreach (var s in SelectedStudents.ToList())
+
+            // No bulk delete API on students: delete one by one based on current selection or by current page when 'all' toggled.
+            if (AllStudentsSelected)
             {
-                await StudentAppService.DeleteAsync(s.StudentDto.Id);
+                foreach (var s in StudentList.ToList())
+                {
+                    await StudentAppService.DeleteAsync(s.StudentDto.Id);
+                }
             }
-        }
+            else
+            {
+                foreach (var s in SelectedStudents.ToList())
+                {
+                    await StudentAppService.DeleteAsync(s.StudentDto.Id);
+                }
+            }
 
-        SelectedStudents.Clear();
-        AllStudentsSelected = false;
+            SelectedStudents.Clear();
+            AllStudentsSelected = false;
 
-        await GetStudentsAsync();
+            await GetStudentsAsync();
+        });
     }
 }

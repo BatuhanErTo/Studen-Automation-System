@@ -33,30 +33,36 @@ public partial class Grading
 
     protected override async Task OnInitializedAsync()
     {
-        // Resolve teacher by current user email
-        var userEmail = CurrentUser.Email ?? string.Empty;
-        var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+        await ExecuteSafeAsync(async () =>
         {
-            EmailAddress = userEmail,
-            MaxResultCount = 1
-        });
-        CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
+            // Resolve teacher by current user email
+            var userEmail = CurrentUser.Email ?? string.Empty;
+            var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
+            {
+                EmailAddress = userEmail,
+                MaxResultCount = 1
+            });
+            CurrentTeacherId = teachers.Items.FirstOrDefault()?.Id;
 
-        if (CurrentTeacherId.HasValue)
-        {
-            await LoadCoursesAsync(CurrentTeacherId.Value);
-        }
+            if (CurrentTeacherId.HasValue)
+            {
+                await LoadCoursesAsync(CurrentTeacherId.Value);
+            }
+        });
     }
 
     private async Task LoadCoursesAsync(Guid teacherId)
     {
-        var result = await CourseAppService.GetListAsync(new GetCoursesInput
+        await ExecuteSafeAsync(async () =>
         {
-            TeacherId = teacherId,
-            MaxResultCount = 1000
-        });
+            var result = await CourseAppService.GetListAsync(new GetCoursesInput
+            {
+                TeacherId = teacherId,
+                MaxResultCount = 1000
+            });
 
-        TeacherCourses = result.Items;
+            TeacherCourses = result.Items;
+        });
     }
 
     private async Task OnCourseChanged(Guid value)
@@ -79,23 +85,29 @@ public partial class Grading
 
     private async Task LoadStudentsForCourseAsync(Guid courseId)
     {
-        // Prefer the WithNavigation call to get both Enrollment and Student at once
-        var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            CourseId = courseId,
-            MaxResultCount = 1000
-        });
+            // Prefer the WithNavigation call to get both Enrollment and Student at once
+            var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+            {
+                CourseId = courseId,
+                MaxResultCount = 1000
+            });
 
-        EnrolledStudents = enrollments.Items
-            .Select(x => x.StudentDto)
-            .DistinctBy(s => s.Id)
-            .ToList();
+            EnrolledStudents = enrollments.Items
+                .Select(x => x.StudentDto)
+                .DistinctBy(s => s.Id)
+                .ToList();
+        });
     }
 
     private async Task LoadGradeComponentsForCourseAsync(Guid courseId)
     {
-        var course = await CourseAppService.GetAsync(courseId);
-        GradeComponents = course.GradeComponents?.OrderBy(gc => gc.Order).ToList() ?? new List<GradeComponentDto>();
+        await ExecuteSafeAsync(async () =>
+        {
+            var course = await CourseAppService.GetAsync(courseId);
+            GradeComponents = course.GradeComponents?.OrderBy(gc => gc.Order).ToList() ?? new List<GradeComponentDto>();
+        });
     }
 
     private async Task OnStudentChanged(Guid value)
@@ -104,12 +116,15 @@ public partial class Grading
         SelectedGradeComponentId = Guid.Empty;
         CurrentEnrollmentId = null;
 
-        if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        await ExecuteSafeAsync(async () =>
         {
-            // Fetch or resolve the enrollment id
-            var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
-            CurrentEnrollmentId = enrollment.Id;
-        }
+            if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+            {
+                // Fetch or resolve the enrollment id
+                var enrollment = await EnrollmentAppService.GetEnrollmentByStudentAndCourseAsync(SelectedStudentIdValue, SelectedCourseIdValue);
+                CurrentEnrollmentId = enrollment.Id;
+            }
+        });
     }
 
     private Task OnGradeComponentChanged(Guid value)
@@ -120,18 +135,21 @@ public partial class Grading
 
     private async Task SaveGradeEntryAsync()
     {
-        if (CurrentEnrollmentId is null || SelectedGradeComponentId == Guid.Empty)
-            return;
-
-        await EnrollmentAppService.AddGradeEntryAsync(new GradeEntryCreateDto
+        await ExecuteSafeAsync(async () =>
         {
-            EnrollmentId = CurrentEnrollmentId.Value,
-            GradeComponentId = SelectedGradeComponentId,
-            Score = Score
-        });
+            if (CurrentEnrollmentId is null || SelectedGradeComponentId == Guid.Empty)
+                return;
 
-        await UiMessageService.Success("Grade entry saved");
-        // Optionally reset score
-        Score = 0;
+            await EnrollmentAppService.AddGradeEntryAsync(new GradeEntryCreateDto
+            {
+                EnrollmentId = CurrentEnrollmentId.Value,
+                GradeComponentId = SelectedGradeComponentId,
+                Score = Score
+            });
+
+            await UiMessageService.Success("Grade entry saved");
+            // Optionally reset score
+            Score = 0;
+        });
     }
 }

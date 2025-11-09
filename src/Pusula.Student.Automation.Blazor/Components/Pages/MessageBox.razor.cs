@@ -29,46 +29,52 @@ public partial class MessageBox
 
     protected override async Task OnInitializedAsync()
     {
-        // Resolve student by current user email
-        var email = CurrentUser.Email ?? string.Empty;
-
-        var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            EmailAddress = email,
-            MaxResultCount = 1
+            // Resolve student by current user email
+            var email = CurrentUser.Email ?? string.Empty;
+
+            var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+            {
+                EmailAddress = email,
+                MaxResultCount = 1
+            });
+
+            var student = students.Items.FirstOrDefault();
+            _studentId = student?.StudentDto.Id;
+
+            if (_studentId.HasValue)
+            {
+                await LoadAsync(_studentId.Value);
+            }
         });
-
-        var student = students.Items.FirstOrDefault();
-        _studentId = student?.StudentDto.Id;
-
-        if (_studentId.HasValue)
-        {
-            await LoadAsync(_studentId.Value);
-        }
 
         _loaded = true;
     }
 
     private async Task LoadAsync(Guid studentId)
     {
-        _items.Clear();
-
-        var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
+        await ExecuteSafeAsync(async () =>
         {
-            StudentId = studentId,
-            MaxResultCount = 1000
-        });
+            _items.Clear();
 
-        foreach (var e in enrollments.Items)
-        {
-            var comments = await EnrollmentAppService.GetTeacherCommentsAsync(e.CourseDto.Id, studentId);
-
-            _items.Add(new CourseCommentsVm
+            var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
             {
-                CourseId = e.CourseDto.Id,
-                CourseName = e.CourseDto.CourseName,
-                Comments = comments.OrderByDescending(c => c.Id).ToList()
+                StudentId = studentId,
+                MaxResultCount = 1000
             });
-        }
+
+            foreach (var e in enrollments.Items)
+            {
+                var comments = await EnrollmentAppService.GetTeacherCommentsAsync(e.CourseDto.Id, studentId);
+
+                _items.Add(new CourseCommentsVm
+                {
+                    CourseId = e.CourseDto.Id,
+                    CourseName = e.CourseDto.CourseName,
+                    Comments = comments.OrderByDescending(c => c.Id).ToList()
+                });
+            }
+        });
     }
 }
