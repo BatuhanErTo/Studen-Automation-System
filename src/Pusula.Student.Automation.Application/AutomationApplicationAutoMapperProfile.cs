@@ -46,6 +46,7 @@ public class AutomationApplicationAutoMapperProfile : Profile
             .ForMember(d => d.DepartmentDto, opt => opt.MapFrom(s => s.Department))
             .ForMember(d => d.CourseDtos, opt => opt.MapFrom(s => s.Courses));
         CreateMap<StudentEntity, StudentDto>();
+        CreateMap<StudentDto, StudentUpdateDto>();
         CreateMap<StudentWithNavigationProperties, StudentWithNavigationPropertiesDto>();
         CreateMap<StudentWithNavigationProperties, StudentWithNavigationPropertiesDto>()
             .ForMember(d => d.StudentDto, opt => opt.MapFrom(s => s.Student))
