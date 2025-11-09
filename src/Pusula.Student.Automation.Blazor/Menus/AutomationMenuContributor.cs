@@ -1,12 +1,15 @@
-﻿using System.Threading.Tasks;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Pusula.Student.Automation.Enums;
 using Pusula.Student.Automation.Localization;
-using Pusula.Student.Automation.Permissions;
 using Pusula.Student.Automation.MultiTenancy;
+using Pusula.Student.Automation.Permissions;
+using System.Threading.Tasks;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.UI.Navigation;
+using Volo.Abp.Identity.Blazor;
 using Volo.Abp.SettingManagement.Blazor.Menus;
 using Volo.Abp.TenantManagement.Blazor.Navigation;
-using Volo.Abp.Identity.Blazor;
+using Volo.Abp.UI.Navigation;
+using Volo.Abp.Users;
 
 namespace Pusula.Student.Automation.Blazor.Menus;
 
@@ -51,31 +54,48 @@ public class AutomationMenuContributor : IMenuContributor
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenus.GroupName, 3);
 
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                AutomationMenus.Teachers,
-                l["Menu:Teachers"],
-                url: "/teachers",
-                icon: "fa fa-file-alt",
-                requiredPermissionName: AutomationPermissions.Teachers.Default)
-            );
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                AutomationMenus.Students,
-                l["Menu:Students"],
-                url: "/students",
-                icon: "fa fa-user-graduate",
-                requiredPermissionName: AutomationPermissions.Students.Default)
-        );
+        var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
 
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                AutomationMenus.Courses,
-                l["Menu:Courses"],
-                url: "/courses",
-                icon: "fa fa-book",
-                requiredPermissionName: AutomationPermissions.Courses.Default)
-        );
+        if (currentUser.IsInRole(Roles.AdminRole))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.Teachers,
+                    l["Menu:Teachers"],
+                    url: "/teachers",
+                    icon: "fa fa-file-alt")
+            );
+
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.Courses,
+                    l["Menu:Courses"],
+                    url: "/courses",
+                    icon: "fa fa-book")
+            );
+        }
+
+        if (currentUser.IsInRole(Roles.TeacherRole))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.MyCourses,
+                    l["Menu:MyCourses"],
+                    url: "/my-courses",
+                    icon: "fa fa-list")
+            );
+        }
+
+        if (currentUser.IsInRole(Roles.AdminRole) || currentUser.IsInRole(Roles.TeacherRole))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.Students,
+                    l["Menu:Students"],
+                    url: "/students",
+                    icon: "fa fa-user-graduate")
+            );
+        }
 
         return Task.CompletedTask;
     }

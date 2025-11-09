@@ -10,4 +10,5 @@ public class Roles
 {
     public const string TeacherRole = "teacher";
     public const string StudentRole = "student";
+    public const string AdminRole = "admin";
 }

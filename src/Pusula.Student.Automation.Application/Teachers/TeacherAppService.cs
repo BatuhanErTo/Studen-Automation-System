@@ -68,7 +68,7 @@ public class TeacherAppService(
         return ObjectMapper.Map<Teacher, TeacherDto>(teacher);
     }
 
-    public virtual async Task<PagedResultDto<TeacherDto>> GetListAsync(GetTeachersInput input)
+    public virtual async Task<PagedResultDto<TeacherDto>> GetPagedListAsync(GetTeachersInput input)
     {
         long totalCount = await teacherRepository.GetCountAsync(
             input.FilterText,
@@ -182,5 +182,15 @@ public class TeacherAppService(
         await identityUserManager.AddToRoleAsync(user, Roles.TeacherRole);
 
         return user.Id;
+    }
+    // give better naming to make the purpose more clear
+    public virtual async Task<List<TeacherDto>> GetListAsync()
+    {
+        var items = await teacherRepository.GetListAsync(
+            sort: "FirstName asc, LastName asc",
+            maxResultCount: int.MaxValue,
+            skipCount: 0);
+
+        return ObjectMapper.Map<List<Teacher>, List<TeacherDto>>(items);
     }
 }

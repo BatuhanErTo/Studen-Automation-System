@@ -227,13 +227,9 @@ public partial class Courses
 
     private async Task EnsureTeachersLoadedForFormAsync()
     {
-        // Load up to 1000 teachers for dropdown
-        var teachers = await TeacherAppService.GetListAsync(new GetTeachersInput
-        {
-            MaxResultCount = 1000
-        });
+        var all = await TeacherAppService.GetListAsync();
 
-        TeachersCollection = teachers.Items
+        TeachersCollection = all
             .Select(t => new LookupDto<Guid> { Id = t.Id, DisplayName = $"{t.FirstName} {t.LastName}" })
             .ToList();
 
@@ -261,7 +257,7 @@ public partial class Courses
 
     private async Task GetTeacherCollectionLookupAsync(string? newValue = null)
     {
-        var teachers = await TeacherAppService.GetListAsync(new GetTeachersInput
+        var teachers = await TeacherAppService.GetPagedListAsync(new GetTeachersInput
         {
             FilterText = newValue,
             MaxResultCount = 50

@@ -9,4 +9,5 @@ public class AutomationMenus
     public const string Teachers = Prefix + ".Teachers";
     public const string Students = Prefix + ".Students";
     public const string Courses = Prefix + ".Courses";
+    public const string MyCourses = Prefix + ".MyCourses";
 }

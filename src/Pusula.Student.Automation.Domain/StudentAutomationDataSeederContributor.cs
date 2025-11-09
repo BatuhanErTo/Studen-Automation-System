@@ -64,13 +64,12 @@ public class StudentAutomationDataSeederContributor(
         );
 
         // 3) Students (3 adet)
-        // Not: EnumGradeYear değerlerini projendeki isimlerle eşleştir (ör: FirstYear/Freshman, SecondYear/Sophomore vb.)
         await EnsureStudentAsync(
             firstName: "Ahmet",
             lastName: "Ertürk",
             identityNumber: "12000000000",
             birthDate: new DateTime(2003, 5, 12),
-            gradeYear: EnumGradeYear.FirstYear,     // gerekirse değiştir
+            gradeYear: EnumGradeYear.FirstYear,    
             gender: EnumGender.Female,
             address: "İstanbul, Beşiktaş",
             email: "ahmet@example.com",
@@ -84,7 +83,7 @@ public class StudentAutomationDataSeederContributor(
             lastName: "Kırıcı",
             identityNumber: "10000060001",
             birthDate: new DateTime(2002, 9, 20),
-            gradeYear: EnumGradeYear.SecondYear,    // gerekirse değiştir
+            gradeYear: EnumGradeYear.SecondYear,   
             gender: EnumGender.Male,
             address: "Ankara, Çankaya",
             email: "ali.kirici@example.com",
@@ -98,7 +97,7 @@ public class StudentAutomationDataSeederContributor(
             lastName: "Kaya",
             identityNumber: "10006000002",
             birthDate: new DateTime(2001, 1, 15),
-            gradeYear: EnumGradeYear.ThirdYear,     // gerekirse değiştir
+            gradeYear: EnumGradeYear.ThirdYear,     
             gender: EnumGender.Female,
             address: "İzmir, Karşıyaka",
             email: "feride.kaya@example.com",

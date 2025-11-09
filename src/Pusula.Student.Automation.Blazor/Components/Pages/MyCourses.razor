@@ -1,0 +1,104 @@
+﻿@page "/my-courses"
+@attribute [Authorize(Roles = Roles.TeacherRole)]
+
+@using Pusula.Student.Automation.Localization
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Courses.CourseSessionComponents
+@using Pusula.Student.Automation.Courses.GradeComponents
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Teachers
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject ICourseAppService CourseAppService
+@inject ITeacherAppService TeacherAppService
+@inject IUiMessageService UiMessageService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="@L["MyCourses"]" />
+
+<Card>
+    <CardBody>
+        <DataGrid TItem="CourseDto"
+                  Data="CourseList"
+                  ReadData="OnDataGridReadAsync"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="PageSize"
+                  Class="datagrid-detail">
+
+            <LoadingTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <RadarSpinner />
+                    </Column>
+                </Row>
+            </LoadingTemplate>
+
+            <EmptyTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <Heading Size="HeadingSize.Is4" TextAlignment="TextAlignment.Center">@L["NoDataAvailable"]</Heading>
+                    </Column>
+                </Row>
+            </EmptyTemplate>
+
+            <DataGridColumns>
+                <DataGridColumn TItem="CourseDto" Field="CourseName" Caption="@L["CourseName"]">
+                    <DisplayTemplate>@context.CourseName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto" Field="Credits" Caption="@L["Credits"]">
+                    <DisplayTemplate>@context.Credits</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto" Field="Status" Caption="@L["Status"]">
+                    <DisplayTemplate>
+                        <Select TValue="EnumCourseStatus" Value="EditingStatuses[context.Id]" ValueChanged="(val)=>OnStatusChanged(context.Id,val)">
+                            @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
+                            {
+                                <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
+                            }
+                        </Select>
+                        <Button Size="Size.Small" Class="ms-2" Clicked="() => SaveStatusAsync(context.Id)">@L["Save"]</Button>
+                    </DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto" Caption="@L["AddCourseSession"]">
+                    <DisplayTemplate>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <Select TValue="EnumWeekDay" Value="SessionInputs[context.Id].Day" ValueChanged="(d)=>OnSessionDayChanged(context.Id,d)">
+                                @foreach (EnumWeekDay d in Enum.GetValues(typeof(EnumWeekDay)))
+                                {
+                                    <SelectItem Value="@d">@L[$"EnumWeekDay:{d}"]</SelectItem>
+                                }
+                            </Select>
+
+                            <TimeEdit TValue="TimeOnly" Time="SessionInputs[context.Id].Time.Start" TimeChanged="(t) => OnSessionStartChanged(context.Id, t)" />
+                            <TimeEdit TValue="TimeOnly" Time="SessionInputs[context.Id].Time.End" TimeChanged="(t) => OnSessionEndChanged(context.Id, t)" />
+
+                            <Button Size="Size.Small" Clicked="() => AddSessionAsync(context.Id)">@L["Add"]</Button>
+                        </div>
+                    </DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto" Caption="@L["AddGradeComponent"]">
+                    <DisplayTemplate>
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <TextEdit Text="GradeInputs[context.Id].GradeComponentName" TextChanged="(v) => OnGradeNameChanged(context.Id, v)" Placeholder="@L["Name"]" />
+                            <NumericEdit TValue="int" Value="GradeInputs[context.Id].Order" ValueChanged="(v) => OnGradeOrderChanged(context.Id, v)" />
+                            <NumericEdit TValue="int" Value="GradeInputs[context.Id].Weight" ValueChanged="(v) => OnGradeWeightChanged(context.Id, v)" />
+                            <Button Size="Size.Small" Clicked="() => AddGradeComponentAsync(context.Id)">@L["Add"]</Button>
+                        </div>
+                    </DisplayTemplate>
+                </DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+    </CardBody>
+</Card>
+

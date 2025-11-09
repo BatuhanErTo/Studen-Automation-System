@@ -1,5 +1,5 @@
 ﻿@page "/teachers"
-@attribute [Authorize(AutomationPermissions.Teachers.Default)]
+@attribute [Authorize(Roles = Roles.AdminRole)]
 
 @using Pusula.Student.Automation.Localization
 @using Pusula.Student.Automation.Permissions;
