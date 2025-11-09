@@ -28,10 +28,10 @@ public class StudentCreateDto
     public string Address { get;  set; } = null!;
     [Required]
     [StringLength(StudentConsts.MaxEmailAddressLength, MinimumLength = StudentConsts.MinEmailAddressLength)]
+    [EmailAddress]
     public string EmailAddress { get;  set; } = null!;
     [Required]
     [StringLength(StudentConsts.MaxPhoneNumberLength, MinimumLength = StudentConsts.MinPhoneNumberLength)]
-    [EmailAddress]
     public string PhoneNumber { get;  set; } = null!;
     [Required]
     [DisableAuditing]
