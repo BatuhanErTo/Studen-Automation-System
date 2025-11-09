@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Pusula.Student.Automation.Enums;
+using Pusula.Student.Automation.Helper.Identity;
 using Pusula.Student.Automation.Permissions;
 using System;
 using System.Collections.Generic;
@@ -16,19 +17,21 @@ namespace Pusula.Student.Automation.Students;
 public class StudentAppService(
     IStudentRepository studentRepository,
     StudentManager studentManager,
-    IdentityUserManager identityUserManager) : AutomationAppService, IStudentAppService
+    IIdentityUserHelper identityUserHelper) : AutomationAppService, IStudentAppService
 {
     [Authorize(AutomationPermissions.Students.Create)]
     [UnitOfWork]
     public virtual async Task<StudentDto> CreateAsync(StudentCreateDto input)
     {
-        Guid createdUserId = await CreateIdentityUser(
+        Guid createdUserId = await identityUserHelper.CreateIdentityUser(
             input.FirstName,
             input.LastName,
             input.EmailAddress.Trim().ToLowerInvariant(),
             input.EmailAddress.Trim().ToLowerInvariant(),
             input.PhoneNumber,
-            input.Password);
+            input.Password,
+            Roles.StudentRole,
+            currentTenantId: CurrentTenant.Id);
 
         var student = await studentManager.CreateStudentAsync(
             input.FirstName,
@@ -134,40 +137,5 @@ public class StudentAppService(
             input.DepartmentId,
             input.ConcurrencyStamp);
         return ObjectMapper.Map<StudentEntity, StudentDto>(updatedStudent);
-    }
-
-    private async Task<Guid> CreateIdentityUser(
-        string firstName,
-        string lastName,
-        string userName,
-        string email,
-        string phoneNumber,
-        string password)
-    {
-        if (await identityUserManager.FindByEmailAsync(email) is not null)
-            throw new UserFriendlyException(L["EmailAlreadyTaken"]);
-
-        if (await identityUserManager.FindByNameAsync(userName) is not null)
-            throw new UserFriendlyException(L["UserNameAlreadyTaken"]);
-
-        var currentTenantId = CurrentTenant.Id;
-        var user = new IdentityUser(GuidGenerator.Create(), userName, email, currentTenantId)
-        {
-            Name = firstName,
-            Surname = lastName
-        };
-        user.SetPhoneNumber(phoneNumber, true);
-        user.SetEmailConfirmed(true);
-
-        var createResult = await identityUserManager.CreateAsync(user, password);
-        if (!createResult.Succeeded)
-        {
-            throw new BusinessException("IdentityUserCreationFailed")
-                .WithData("Errors", string.Join(",", createResult.Errors.Select(e => e.Description)));
-        }
-
-        await identityUserManager.AddToRoleAsync(user, Roles.StudentRole);
-
-        return user.Id;
     }
 }
