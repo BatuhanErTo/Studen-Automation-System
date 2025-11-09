@@ -22,8 +22,8 @@ services:
     container_name: pth_pgadmin4
     restart: always
     environment:
-      PGADMIN_DEFAULT_EMAIL: training@pusulayazilim.com.tr
-      PGADMIN_DEFAULT_PASSWORD: myPassw0rd
+      PGADMIN_DEFAULT_EMAIL: spaghetti@spaghetti.com.tr
+      PGADMIN_DEFAULT_PASSWORD: spaghettiErol
       PGADMIN_LISTEN_PORT: 5050
     ports:
       - "5050:5050"
