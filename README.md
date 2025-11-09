@@ -110,7 +110,7 @@
 
 <img width="1919" height="594" alt="image" src="https://github.com/user-attachments/assets/7c288ef0-d64b-40d0-af77-993938a474f9" />
 
-### Teacher kullanıcı Öğrenci Listeleyebilir, ekleyebilir
+### Teacher kullanıcı Öğrenci Listeleyebilir, ekleyebilir, öğrenci bilgilerini güncelleyebilir
 <img width="1905" height="868" alt="image" src="https://github.com/user-attachments/assets/9aba5a0d-f08b-4326-9aba-1c04eeba94ff" />
 
 ### Student Kullanıcı için
