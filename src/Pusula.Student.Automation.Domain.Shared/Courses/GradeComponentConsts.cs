@@ -16,7 +16,7 @@ public class GradeComponentConsts
     }
 
     public const int MaxGradeComponentNameLength = 50;
-    public const int MinGradeComponentNameLength = 5;
+    public const int MinGradeComponentNameLength = 3;
 
     public const int MinWeight = 1;
     public const int MaxWeight = 100;

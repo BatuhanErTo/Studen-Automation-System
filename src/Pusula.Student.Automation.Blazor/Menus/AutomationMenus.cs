@@ -6,5 +6,5 @@ public class AutomationMenus
     public const string Home = Prefix + ".Home";
 
     //Add your menu items here...
-
+    public const string Teachers = Prefix + ".Teachers";
 }

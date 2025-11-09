@@ -16,12 +16,13 @@ public sealed class Teacher : FullAuditedAggregateRoot<Guid>
     public string FirstName { get; private set; }
     [NotNull]
     public string LastName { get; private set; }
-    public EnumGender Gender { get; private set; }
+    public EnumGender EnumGender { get; private set; }
     [NotNull]
     public string EmailAddress { get; private set; }
     [NotNull]
     public string PhoneNumber { get; private set; }
     public Guid DepartmentId { get; private set; }
+    public Guid IdentityUserId { get; private set; }
 
     protected Teacher(){}
 
@@ -32,7 +33,8 @@ public sealed class Teacher : FullAuditedAggregateRoot<Guid>
         EnumGender gender,
         string emailAddress,
         string phoneNumber,
-        Guid departmentId) : base(id)
+        Guid departmentId,
+        Guid identityUserId) : base(id)
     {
         SetFirstName(firstName);
         SetLastName(lastName);
@@ -40,6 +42,7 @@ public sealed class Teacher : FullAuditedAggregateRoot<Guid>
         SetEmailAddress(emailAddress);
         SetPhoneNumber(phoneNumber);
         SetDepartmentId(departmentId);
+        SetIdentityUserId(identityUserId);
     }
 
     public void SetFirstName(string firstName)
@@ -56,7 +59,7 @@ public sealed class Teacher : FullAuditedAggregateRoot<Guid>
         LastName = lastName;
     }
 
-    public void SetGender(EnumGender gender) => Gender = gender;
+    public void SetGender(EnumGender gender) => EnumGender = gender;
 
     public void SetEmailAddress(string emailAddress)
     {
@@ -78,6 +81,13 @@ public sealed class Teacher : FullAuditedAggregateRoot<Guid>
 
         DepartmentId = departmentId;
     }
-
+    public void SetIdentityUserId(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new BusinessException("Teacher.IdentityUserIdInvalid");
+        }
+        IdentityUserId = userId;
+    }
 }
 

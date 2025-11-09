@@ -31,6 +31,7 @@ public sealed class StudentEntity : FullAuditedAggregateRoot<Guid>
     [NotNull]
     public string PhoneNumber { get; private set; }
     public Guid DepartmentId { get; private set; }
+    public Guid IdentityUserId { get; private set; }
 
     protected StudentEntity(){}
 
@@ -45,7 +46,8 @@ public sealed class StudentEntity : FullAuditedAggregateRoot<Guid>
         string address,
         string emailAddress,
         string phoneNumber,
-        Guid departmentId) : base(id)
+        Guid departmentId,
+        Guid identityUserId) : base(id)
     {
         SetFirstName(firstName);
         SetLastName(lastName);
@@ -57,6 +59,7 @@ public sealed class StudentEntity : FullAuditedAggregateRoot<Guid>
         SetEmailAddress(emailAddress);
         SetPhoneNumber(phoneNumber);
         SetDepartmentId(departmentId);
+        SetIdentityUserId(identityUserId);
     }
 
     public void SetFirstName(string firstName)
@@ -116,5 +119,14 @@ public sealed class StudentEntity : FullAuditedAggregateRoot<Guid>
         if (departmentId == Guid.Empty) throw new BusinessException("Student.DepartmentIdInvalid");
 
         DepartmentId = departmentId;
+    }
+
+    public void SetIdentityUserId(Guid userId)
+    {
+        if (userId == Guid.Empty)
+        {
+            throw new BusinessException("Student.IdentityUserIdInvalid");
+        }
+        IdentityUserId = userId;
     }
 }

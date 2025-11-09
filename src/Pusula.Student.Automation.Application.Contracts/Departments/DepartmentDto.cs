@@ -10,6 +10,6 @@ namespace Pusula.Student.Automation.Departments;
 
 public class DepartmentDto : FullAuditedEntityDto<Guid>, IHasConcurrencyStamp
 {
-    public string DepartmentName { get; private set; } = null!;
+    public string DepartmentName { get; set; } = null!;
     public string ConcurrencyStamp { get; set; } = null!;
 }

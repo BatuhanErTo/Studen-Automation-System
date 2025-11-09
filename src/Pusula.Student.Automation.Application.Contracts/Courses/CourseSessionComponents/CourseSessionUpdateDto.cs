@@ -11,8 +11,8 @@ namespace Pusula.Student.Automation.Courses.CourseSessionComponents;
 
 public class CourseSessionUpdateDto : IHasConcurrencyStamp
 {
-    public Guid CourseId { get; private set; }
-    public EnumWeekDay Day { get; private set; }
-    public TimeRangeDto Time { get; private set; }
+    public Guid CourseId { get; set; }
+    public EnumWeekDay Day { get; set; }
+    public TimeRangeDto Time { get; set; }
     public string ConcurrencyStamp { get; set; }
 }

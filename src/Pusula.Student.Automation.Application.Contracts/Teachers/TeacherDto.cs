@@ -11,11 +11,11 @@ namespace Pusula.Student.Automation.Teachers;
 
 public class TeacherDto : FullAuditedEntityDto<Guid>, IHasConcurrencyStamp
 {
-    public string FirstName { get; private set; } = null!;
-    public string LastName { get; private set; } = null!;
-    public EnumGender Gender { get; private set; } = EnumGender.Unknown;
-    public string EmailAddress { get; private set; } = null!;
-    public string PhoneNumber { get; private set; } = null!;
-    public Guid DepartmentId { get; private set; }
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+    public EnumGender EnumGender { get; set; } = EnumGender.Unknown;
+    public string EmailAddress { get; set; } = null!;
+    public string PhoneNumber { get; set; } = null!;
+    public Guid DepartmentId { get; set; }
     public string ConcurrencyStamp { get; set; } = null!;
 }

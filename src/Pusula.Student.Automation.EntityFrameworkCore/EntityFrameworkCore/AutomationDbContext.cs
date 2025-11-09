@@ -133,14 +133,20 @@ public class AutomationDbContext :
                     .IsRequired()
                     .HasMaxLength(TeacherConsts.MaxPhoneNumberLength);
 
-                b.Property(x => x.Gender)
-                    .HasColumnName(nameof(Teacher.Gender))
+                b.Property(x => x.EnumGender)
+                    .HasColumnName(nameof(Teacher.EnumGender))
                     .IsRequired();
 
                 b.HasOne<Department>()
                  .WithMany()
                  .HasForeignKey(x => x.DepartmentId)
                  .OnDelete(DeleteBehavior.NoAction);
+
+                b.HasOne<IdentityUser>()
+                .WithMany()
+                .HasForeignKey(x => x.IdentityUserId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.NoAction);
             });
 
             builder.Entity<StudentEntity>(b =>
@@ -192,6 +198,12 @@ public class AutomationDbContext :
                 b.HasOne<Department>()
                  .WithMany()
                  .HasForeignKey(x => x.DepartmentId)
+                 .OnDelete(DeleteBehavior.NoAction);
+
+                b.HasOne<IdentityUser>()
+                 .WithMany()
+                 .HasForeignKey(x => x.IdentityUserId)
+                 .IsRequired()
                  .OnDelete(DeleteBehavior.NoAction);
 
                 b.HasIndex(x => x.IdentityNumber).IsUnique();

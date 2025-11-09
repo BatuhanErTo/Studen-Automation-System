@@ -20,6 +20,7 @@ public class TeacherManager(ITeacherRepository teacherRepository) : DomainServic
         string emailAddress, 
         string phoneNumber,
         Guid departmentId,
+        Guid identityUserId,
         CancellationToken cancellationToken = default)
     {
         CheckValidate(firstName, lastName, emailAddress, phoneNumber, departmentId);
@@ -31,7 +32,8 @@ public class TeacherManager(ITeacherRepository teacherRepository) : DomainServic
                 enumGender,
                 emailAddress,
                 phoneNumber, 
-                departmentId);
+                departmentId,
+                identityUserId);
 
         return await teacherRepository.InsertAsync(teacher, cancellationToken: cancellationToken);
     }
@@ -50,6 +52,8 @@ public class TeacherManager(ITeacherRepository teacherRepository) : DomainServic
         CheckValidate(firstName, lastName, emailAddress, phoneNumber, departmentId);
         
         var teacher = await teacherRepository.GetAsync(id, cancellationToken: cancellationToken);
+
+        // Ayrıca IdentityUser üzerindeki bilgileri de güncellemeniz gerekecektir.
 
         teacher.SetFirstName(firstName);
         teacher.SetLastName(lastName);

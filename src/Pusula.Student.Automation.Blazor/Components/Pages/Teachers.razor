@@ -1,0 +1,440 @@
+﻿@page "/teachers"
+@attribute [Authorize(AutomationPermissions.Teachers.Default)]
+
+@using Pusula.Student.Automation.Localization
+@using Pusula.Student.Automation.Permissions;
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Departments
+@using Pusula.Student.Automation.Shared;
+@using Pusula.Student.Automation.Enums
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Http.Client
+
+@inherits AutomationComponentBase
+
+@inject ITeacherAppService TeacherAppService
+@inject IDepartmentAppService DepartmentAppService
+@inject IUiMessageService UiMessageService
+@inject AbpBlazorMessageLocalizerHelper<AutomationResource> LH
+@inject IRemoteServiceConfigurationProvider RemoteServiceConfigurationProvider
+@inject NavigationManager NavigationManager
+
+@* ************************* PAGE HEADER ************************* *@
+<PageHeader Title="@L["Teachers"]" BreadcrumbItems="BreadcrumbItems" Toolbar="Toolbar">
+</PageHeader>
+
+@* ************************* SEARCH ************************* *@
+<Card>
+    <CardBody>
+        <Form id="TeacherSearchForm" class="mb-3">
+            <Addons>
+                <Addon AddonType="AddonType.Body">
+                    <TextEdit @bind-Text="@Filter.FilterText"
+                              Autofocus="true"
+                              Placeholder="@L["Search"]">
+                    </TextEdit>
+                </Addon>
+                <Addon AddonType="AddonType.End">
+                    <SubmitButton Form="TeacherSearchForm" Clicked="GetTeachersAsync">
+                        <Icon Name="@IconName.Search" Class="me-1"></Icon>@L["Search"]
+                    </SubmitButton>
+                </Addon>
+            </Addons>
+        </Form>
+
+        <Row Class="mt-3 mb-3">
+            <div class="col-md-12">
+                <a href="javascript:;" class="text-decoration-none" @onclick="() => ShowAdvancedFilters = !ShowAdvancedFilters">@L["SeeAdvancedFilters"]</a>
+            </div>
+        </Row>
+
+        <div style="display: @(!ShowAdvancedFilters ? "none" : "block")">
+            <Row>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["FirstName"]</FieldLabel>
+                        <TextEdit Text="@Filter.FirstName" TextChanged="@OnFirstNameChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["LastName"]</FieldLabel>
+                        <TextEdit Text="@Filter.LastName" TextChanged="@OnLastNameChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["EmailAddress"]</FieldLabel>
+                        <TextEdit Text="@Filter.EmailAddress" TextChanged="@OnEmailAddressChangedAsync" />
+                    </Field>
+                </Column>
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["MobilePhoneNumber"]</FieldLabel>
+                        <TextEdit Text="@Filter.PhoneNumber" TextChanged="@OnPhoneNumberChangedAsync" />
+                    </Field>
+                </Column>
+                @*
+                <Column ColumnSize="ColumnSize.Is3">
+                    <Field>
+                        <FieldLabel>@L["EnumGender"]</FieldLabel>
+                        <Select TValue="EnumGender?" @bind-Value="Filter.EnumGender">
+                            <SelectItem Value="@((EnumGender?)null)">@L["All"]</SelectItem>
+                            <SelectItem Value="@((EnumGender?)EnumGender.Unknown)">@L["EnumGender:Unknown"]</SelectItem>
+                            <SelectItem Value="@((EnumGender?)EnumGender.Male)">@L["EnumGender:Male"]</SelectItem>
+                            <SelectItem Value="@((EnumGender?)EnumGender.Female)">@L["EnumGender:Female"]</SelectItem>
+                        </Select>
+                    </Field>
+                </Column>
+                *@
+            </Row>
+        </div>
+    </CardBody>
+</Card>
+
+@* ************************* DATA GRID ************************* *@
+<Card>
+    <CardBody>
+        @if (SelectedTeachers.Any())
+        {
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                @if (AllTeachersSelected)
+                {
+                    <p class="lead mb-0">
+                        @L["AllItemsAreSelected", TotalCount]
+                    </p>
+                }
+                else
+                {
+                    <p class="lead mb-0">
+                        @if (SelectedTeachers.Count > 1)
+                        {
+                            @L["NumberOfItemsOnThisPageAreSelected", SelectedTeachers.Count]
+                        }
+                        else
+                        {
+                            @L["OneItemOnThisPageIsSelected"]
+                        }
+                    </p>
+                }
+
+                <div>
+                    @if ((SelectedTeachers.Count == PageSize || SelectedTeachers.Count == TeacherList.Count) && TotalCount > SelectedTeachers.Count)
+                    {
+                        if (!AllTeachersSelected)
+                        {
+                            <Button Clicked="SelectAllItems" Class="mx-1 btn-outline-secondary">@L["SelectAllItems", TotalCount]</Button>
+                        }
+                        else
+                        {
+                            <Button Clicked="ClearSelection" Class="mx-1 btn-outline-secondary">@L["ClearSelection"]</Button>
+                        }
+                    }
+
+                    <Button Color="Color.Danger" Class="mx-1" Size="Size.Medium" Clicked="DeleteSelectedTeachersAsync">
+                        <Icon Name="@IconName.Delete" /> @L["Delete"]
+                    </Button>
+                </div>
+            </div>
+
+            <hr class="my-1 mx-0" />
+        }
+
+        <DataGrid TItem="TeacherWithNavigationPropertiesDto"
+                  Data="TeacherList"
+                  SelectionMode="DataGridSelectionMode.Multiple"
+                  SelectedRows="SelectedTeachers"
+                  RowSelectable="@((args) => CanDeleteTeacher)"
+                  SelectedRowsChanged="SelectedTeacherRowsChanged"
+                  ReadData="OnDataGridReadAsync"
+                  TotalItems="TotalCount"
+                  ShowPager="true"
+                  Responsive="true"
+                  PageSize="PageSize"
+                  Class="datagrid-detail">
+            <LoadingTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <RadarSpinner />
+                    </Column>
+                </Row>
+            </LoadingTemplate>
+            <EmptyTemplate>
+                <Row Class="w-100 align-items-center" Style="height: 150px;">
+                    <Column>
+                        <Heading Size="HeadingSize.Is4" TextAlignment="TextAlignment.Center">@L["NoDataAvailable"]</Heading>
+                    </Column>
+                </Row>
+            </EmptyTemplate>
+            <DataGridColumns>
+
+                @if (CanDeleteTeacher && TeacherList.Any())
+                {
+                    <DataGridMultiSelectColumn TItem="TeacherWithNavigationPropertiesDto" DisplayOrder="-1" Width="30px"></DataGridMultiSelectColumn>
+                }
+
+                <DataGridEntityActionsColumn TItem="TeacherWithNavigationPropertiesDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="TeacherWithNavigationPropertiesDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="TeacherWithNavigationPropertiesDto"
+                                          Visible="@CanEditTeacher"
+                                          Clicked="async () => await OpenEditTeacherModalAsync(context)"
+                                          Text="@L["Edit"]"></EntityAction>
+                            <EntityAction TItem="TeacherWithNavigationPropertiesDto"
+                                          Visible="@CanDeleteTeacher"
+                                          Clicked="() => DeleteTeacherAsync(context)"
+                                          ConfirmationMessage="@(()=> L["DeleteConfirmationMessage"])"
+                                          Text="@L["Delete"]"></EntityAction>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Field="TeacherDto.FirstName"
+                                Caption="@L["FirstName"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.TeacherDto.FirstName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Field="TeacherDto.LastName"
+                                Caption="@L["LastName"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.TeacherDto.LastName</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Field="TeacherDto.EnumGender"
+                                Caption="@L["EnumGender"]"
+                                Sortable="false">
+                    <DisplayTemplate>
+                        @context.TeacherDto.EnumGender.ToString()
+                    </DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Field="TeacherDto.EmailAddress"
+                                Caption="@L["EmailAddress"]"
+                                Sortable="false">
+                    <DisplayTemplate>@context.TeacherDto.EmailAddress</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Field="TeacherDto.PhoneNumber"
+                                Caption="@L["MobilePhoneNumber"]">
+                    <DisplayTemplate>@context.TeacherDto.PhoneNumber</DisplayTemplate>
+                </DataGridColumn>
+                <DataGridColumn TItem="TeacherWithNavigationPropertiesDto"
+                                Caption="@L["Department"]"
+                                Sortable="false">
+                    <DisplayTemplate>
+                        @(context.DepartmentDto?.DepartmentName ?? context.DepartmentDto?.DepartmentName ?? "-")
+                    </DisplayTemplate>
+                </DataGridColumn>
+            </DataGridColumns>
+        </DataGrid>
+
+    </CardBody>
+</Card>
+
+@* ************************* CREATE MODAL ************************* *@
+<Modal @ref="CreateTeacherModal" Closing="@CreateTeacherModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="CreateTeacherForm">
+            <ModalHeader>
+                <ModalTitle>@L["NewTeacher"]</ModalTitle>
+                <CloseButton Clicked="CloseCreateTeacherModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@NewTeacherValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@NewTeacher"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["FirstName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewTeacher.FirstName"
+                                      MaxLength="TeacherConsts.MaxFirstNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <!-- Last Name -->
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["LastName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewTeacher.LastName"
+                                      MaxLength="TeacherConsts.MaxLastNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                    @*
+                    <!-- Gender -->
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EnumGender"] *</FieldLabel>
+                            <Select TValue="EnumGender" @bind-Value="NewTeacher.EnumGender">
+                                @foreach (EnumGender g in Enum.GetValues(typeof(EnumGender)))
+                                {
+                                    <SelectItem Value="@g">@L[$"EnumGender:{g}"]</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                    </Validation>
+                    *@
+                    <!-- Email -->
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EmailAddress"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewTeacher.EmailAddress"
+                                      MaxLength="TeacherConsts.MaxEmailAddressLength"
+                                      Role="TextRole.Email">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <!-- Password -->
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["Password"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewTeacher.Password"
+                                      Role="TextRole.Password"
+                                      Type="TextEditType.Password">
+                                <Feedback><ValidationError /></Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <!-- Phone Number -->
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["PhoneNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@NewTeacher.PhoneNumber"
+                                      MaxLength="TeacherConsts.MaxPhoneNumberLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                    <!-- Department -->
+                    <Field>
+                        <FieldLabel>@L["Department"] *</FieldLabel>
+                        <Autocomplete Data="@DepartmentsCollection"
+                                      TItem="LookupDto<Guid>"
+                                      TValue="Guid"
+                                      TextField="@((item) => item?.DisplayName)"
+                                      ValueField="@((item) => item?.Id ?? default)"
+                                      SearchChanged="@GetDepartmentCollectionLookupAsync"
+                                      @bind-SelectedValue="@NewTeacher.DepartmentId"
+                                      Placeholder="&#8212;" />
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseCreateTeacherModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="CreateTeacherForm" Clicked="CreateTeacherAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ************************* EDIT MODAL ************************* *@
+<Modal @ref="EditTeacherModal" Closing="@EditTeacherModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        @*//<suite-custom-code-block-8>*@
+        @*//</suite-custom-code-block-8>*@
+        <Form id="EditTeacherForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditTeacherModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditingTeacherValidations"
+                             Mode="ValidationMode.Auto"
+                             Model="@EditingTeacher"
+                             ValidateOnLoad="false">
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["FirstName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingTeacher.FirstName" MaxLength="TeacherConsts.MaxFirstNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["LastName"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingTeacher.LastName" MaxLength="TeacherConsts.MaxLastNameLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                    @*
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EnumGender"] *</FieldLabel>
+                            <Select TValue="EnumGender" @bind-Value="EditingTeacher.EnumGender">
+                                @foreach (EnumGender g in Enum.GetValues(typeof(EnumGender)))
+                                {
+                                    <SelectItem Value="@g">@L[$"EnumGender:{g}"]</SelectItem>
+                                }
+                            </Select>
+                        </Field>
+                    </Validation>
+                    *@
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["EmailAddress"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingTeacher.EmailAddress" MaxLength="TeacherConsts.MaxEmailAddressLength" Role="TextRole.Email">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+
+                    <Validation MessageLocalizer="@LH.Localize">
+                        <Field>
+                            <FieldLabel>@L["MobilePhoneNumber"] *</FieldLabel>
+                            <TextEdit @bind-Text="@EditingTeacher.PhoneNumber" MaxLength="TeacherConsts.MaxPhoneNumberLength">
+                                <Feedback>
+                                    <ValidationError />
+                                </Feedback>
+                            </TextEdit>
+                        </Field>
+                    </Validation>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary"
+                        Clicked="CloseEditTeacherModalAsync">
+                    @L["Cancel"]
+                </Button>
+                <SubmitButton Form="EditTeacherForm" Clicked="UpdateTeacherAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>

@@ -27,6 +27,7 @@ public class StudentManager(IStudentRepository studentRepository) : DomainServic
         string emailAddress,
         string phoneNumber,
         Guid departmentId,
+        Guid identityUserId,
         CancellationToken cancellationToken = default)
     {
         CheckValidate(firstName, lastName, identityNumber, birthDate, address, emailAddress, phoneNumber, departmentId);
@@ -42,7 +43,8 @@ public class StudentManager(IStudentRepository studentRepository) : DomainServic
                 address, 
                 emailAddress, 
                 phoneNumber, 
-                departmentId);
+                departmentId,
+                identityUserId);
 
         return await studentRepository.InsertAsync(student, cancellationToken: cancellationToken);
     }

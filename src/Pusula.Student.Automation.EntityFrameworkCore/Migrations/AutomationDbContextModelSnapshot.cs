@@ -429,6 +429,9 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnType("character varying(11)")
                         .HasColumnName("IdentityNumber");
 
+                    b.Property<Guid>("IdentityUserId")
+                        .HasColumnType("uuid");
+
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -464,6 +467,8 @@ namespace Pusula.Student.Automation.Migrations
 
                     b.HasIndex("IdentityNumber")
                         .IsUnique();
+
+                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("AppStudents", (string)null);
                 });
@@ -505,6 +510,10 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("EmailAddress");
 
+                    b.Property<int>("EnumGender")
+                        .HasColumnType("integer")
+                        .HasColumnName("EnumGender");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("text")
@@ -516,9 +525,8 @@ namespace Pusula.Student.Automation.Migrations
                         .HasColumnType("character varying(256)")
                         .HasColumnName("FirstName");
 
-                    b.Property<int>("Gender")
-                        .HasColumnType("integer")
-                        .HasColumnName("Gender");
+                    b.Property<Guid>("IdentityUserId")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsDeleted")
                         .ValueGeneratedOnAdd()
@@ -549,6 +557,8 @@ namespace Pusula.Student.Automation.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("IdentityUserId");
 
                     b.ToTable("AppTeachers", (string)null);
                 });
@@ -2518,6 +2528,12 @@ namespace Pusula.Student.Automation.Migrations
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Volo.Abp.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("IdentityUserId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Pusula.Student.Automation.Teachers.Teacher", b =>
@@ -2525,6 +2541,12 @@ namespace Pusula.Student.Automation.Migrations
                     b.HasOne("Pusula.Student.Automation.Departments.Department", null)
                         .WithMany()
                         .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Volo.Abp.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("IdentityUserId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
                 });

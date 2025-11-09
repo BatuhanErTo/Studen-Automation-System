@@ -20,7 +20,7 @@ public interface ICourseAppService : IApplicationService
     Task<CourseDto> GetAsync(Guid id);
     Task<CourseDto> CreateAsync(CourseCreateDto input);
     Task<CourseDto> UpdateAsync(Guid id, CourseUpdateDto input);
-    Task DeletAsync(Guid id);
+    Task DeleteAsync(Guid id);
 
     #region GradeComponent service methods
     Task<GradeComponentDto> AddGradeComponentAsync(

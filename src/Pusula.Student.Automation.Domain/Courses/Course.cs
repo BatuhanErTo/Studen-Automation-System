@@ -122,7 +122,7 @@ public sealed class Course : FullAuditedAggregateRoot<Guid>
     private void EnsureGradeWeightsValid()
     {
         var total = _gradeComponents.Sum(x => x.Weight);
-        if (total != 100)
+        if (total > 100) //TODO: extra logic is needed to handle distribution of weights after addition/updation. For now, just throwing exception
             throw new BusinessException("Course.GradeComponent.TotalWeightMustBe100");
     }
     #endregion

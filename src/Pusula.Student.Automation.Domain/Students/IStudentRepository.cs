@@ -29,7 +29,7 @@ public interface IStudentRepository : IRepository<StudentEntity, Guid>
             int skipCount = 0,
             CancellationToken cancellationToken = default);
 
-    Task<List<StudentWithNavigationProperties>> GetListWithNavigationProperties(
+    Task<List<StudentWithNavigationProperties>> GetListWithNavigationPropertiesAsync(
             string? filterText = null,
             string? firstName = null,
             string? lastName = null,
@@ -46,7 +46,7 @@ public interface IStudentRepository : IRepository<StudentEntity, Guid>
             int skipCount = 0,
             CancellationToken cancellationToken = default);
 
-    Task<StudentWithNavigationProperties> GetWithNavigationPropertiesByStudentId(
+    Task<StudentWithNavigationProperties> GetWithNavigationPropertiesByStudentIdAsync(
         Guid studentId,
         CancellationToken cancellationToken = default);
 

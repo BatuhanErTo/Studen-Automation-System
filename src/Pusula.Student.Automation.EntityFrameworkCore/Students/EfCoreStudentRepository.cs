@@ -44,14 +44,14 @@ public class EfCoreStudentRepository(IDbContextProvider<AutomationDbContext> dbC
         return await query.PageBy(skipCount, maxResultCount).ToListAsync(cancellationToken);
     }
 
-    public async Task<List<StudentWithNavigationProperties>> GetListWithNavigationProperties(string? filterText = null, string? firstName = null, string? lastName = null, string? identityNumber = null, DateTime? birthDate = null, EnumGradeYear? gradeYear = null, EnumGender? gender = null, string? address = null, string? emailAddress = null, string? phoneNumber = null, Guid? departmentId = null, string? sort = null, int maxResultCount = int.MaxValue, int skipCount = 0, CancellationToken cancellationToken = default)
+    public async Task<List<StudentWithNavigationProperties>> GetListWithNavigationPropertiesAsync(string? filterText = null, string? firstName = null, string? lastName = null, string? identityNumber = null, DateTime? birthDate = null, EnumGradeYear? gradeYear = null, EnumGender? gender = null, string? address = null, string? emailAddress = null, string? phoneNumber = null, Guid? departmentId = null, string? sort = null, int maxResultCount = int.MaxValue, int skipCount = 0, CancellationToken cancellationToken = default)
     {
         var queryable = await GetQueryForNavigationProperties();
         var query = ApplyFilter(queryable, filterText, firstName, lastName, identityNumber, birthDate, gradeYear, gender, address, emailAddress, phoneNumber, departmentId);
         return await query.PageBy(skipCount, maxResultCount).ToListAsync(cancellationToken);
     }
 
-    public async Task<StudentWithNavigationProperties> GetWithNavigationPropertiesByStudentId(Guid studentId, CancellationToken cancellationToken = default)
+    public async Task<StudentWithNavigationProperties> GetWithNavigationPropertiesByStudentIdAsync(Guid studentId, CancellationToken cancellationToken = default)
     {
         var dbContext = await GetDbContextAsync();
 

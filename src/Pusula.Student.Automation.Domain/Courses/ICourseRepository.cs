@@ -33,4 +33,6 @@ public interface ICourseRepository : IRepository<Course, Guid>
             Guid? teacherId = null,
             CancellationToken cancellationToken = default);
 
+    Task<Course> GetWithDetailsAsync(Guid id, bool asNoTracking = false, CancellationToken cancellationToken = default);
+
 }

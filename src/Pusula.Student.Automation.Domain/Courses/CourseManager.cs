@@ -62,7 +62,7 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
     {
         CheckValidateGradeComponent(gradeComponentName, weight);
 
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
 
         var gradeComponent = course.AddGradeComponent(GuidGenerator.Create(), gradeComponentName, order, weight);
 
@@ -75,7 +75,7 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
     {
         CheckValidateGradeComponent(gradeComponentName, weight);
 
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
         var updatedGradeComponent = course.UpdateGradeComponent(gradeComponentId, gradeComponentName, order, weight);
 
         await courseRepository.UpdateAsync(course, cancellationToken: cancellationToken);
@@ -84,7 +84,7 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
 
     public virtual async Task RemoveGradeComponentAsync(Guid courseId, Guid gradeComponentId, CancellationToken cancellationToken = default)
     {
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
         course.RemoveGradeComponent(gradeComponentId);
 
         await courseRepository.UpdateAsync(course, cancellationToken: cancellationToken);
@@ -92,7 +92,8 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
 
     public virtual async Task<CourseSession> AddCourseSessionAsync(Guid courseId, EnumWeekDay day, TimeRange time, CancellationToken cancellationToken = default)
     {
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        //TODO: ilgili öğretmenin farklı bir kursu aynı vakit dilimlerinde çakışabilir bunun kontrolünü yap
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
         var courseSession = course.AddCourseSession(GuidGenerator.Create(), day, time);
 
         await courseRepository.UpdateAsync(course, cancellationToken: cancellationToken);
@@ -101,7 +102,7 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
     }
     public virtual async Task<CourseSession> UpdateCourseSessionAsync(Guid courseId, Guid courseSessionId, EnumWeekDay day, TimeRange time, CancellationToken cancellationToken = default)
     {
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
         var updatedCourse = course.UpdateCourseSession(courseSessionId, day, time);
 
         await courseRepository.UpdateAsync(course, cancellationToken: cancellationToken);
@@ -111,7 +112,7 @@ public class CourseManager(ICourseRepository courseRepository) : DomainService
 
     public virtual async Task RemoveCourseSessionAsync(Guid courseId, Guid courseSessionId, CancellationToken cancellationToken = default)
     {
-        var course = await courseRepository.GetAsync(courseId, cancellationToken: cancellationToken);
+        var course = await courseRepository.GetWithDetailsAsync(courseId, cancellationToken: cancellationToken);
         course.RemoveCourseSession(courseSessionId);
 
         await courseRepository.UpdateAsync(course, cancellationToken: cancellationToken);

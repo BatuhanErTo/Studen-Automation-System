@@ -12,8 +12,11 @@ public interface ITeacherAppService : IApplicationService
 {
     Task<TeacherWithNavigationPropertiesDto> GetWithNavigationAsync(Guid id);
     Task<PagedResultDto<TeacherWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetTeachersInput input);
+    Task<PagedResultDto<TeacherDto>> GetListAsync(GetTeachersInput input);
     Task<TeacherDto> GetAsync(Guid id);
     Task<TeacherDto> CreateAsync(TeacherCreateDto input);
     Task<TeacherDto> UpdateAsync(Guid id, TeacherUpdateDto input);
-    Task DeletAsync(Guid id);
+    Task DeleteAsync(Guid id);
+    Task DeleteByIdsAsync(List<Guid> teacherIds);
+    Task DeleteAllAsync(GetTeachersInput input);
 }

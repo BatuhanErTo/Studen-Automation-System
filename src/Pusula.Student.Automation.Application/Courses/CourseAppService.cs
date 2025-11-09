@@ -1,6 +1,8 @@
-﻿using Pusula.Student.Automation.Courses.CourseSessionComponents;
+﻿using Microsoft.AspNetCore.Authorization;
+using Pusula.Student.Automation.Courses.CourseSessionComponents;
 using Pusula.Student.Automation.Courses.GradeComponents;
 using Pusula.Student.Automation.Enums;
+using Pusula.Student.Automation.Permissions;
 using Pusula.Student.Automation.Shared;
 using Pusula.Student.Automation.ValueObjects;
 using System;
@@ -13,8 +15,10 @@ using Volo.Abp.Application.Dtos;
 
 namespace Pusula.Student.Automation.Courses;
 
+[Authorize(AutomationPermissions.Courses.Default)]
 public class CourseAppService(ICourseRepository courseRepository, CourseManager courseManager) : AutomationAppService, ICourseAppService
 {
+    [Authorize(AutomationPermissions.Courses.Create)]
     public virtual async Task<CourseDto> CreateAsync(CourseCreateDto input)
     {
         var course = await courseManager.CreateCourseAsync(
@@ -27,14 +31,15 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<Course, CourseDto>(course);
     }
 
-    public virtual async Task DeletAsync(Guid id)
+    [Authorize(AutomationPermissions.Courses.Delete)]
+    public virtual async Task DeleteAsync(Guid id)
     {
         await courseRepository.DeleteAsync(id);
     }
 
     public virtual async Task<CourseDto> GetAsync(Guid id)
     {
-        var course = await courseRepository.GetAsync(id);   
+        var course = await courseRepository.GetWithDetailsAsync(id, asNoTracking: true);   
         return ObjectMapper.Map<Course, CourseDto>(course);
     }
 
@@ -66,6 +71,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
 
     }
 
+    [Authorize(AutomationPermissions.Courses.Edit)]
     public virtual async Task<CourseDto> UpdateAsync(Guid id, CourseUpdateDto input)
     {
         var updatedCourse = await courseManager.UpdateCourseAsync(
@@ -80,7 +86,8 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<Course, CourseDto>(updatedCourse);
     }
 
-    #region GradeComponent service methods
+#region GradeComponent service methods
+    [Authorize(AutomationPermissions.Courses.Create)]
     public virtual async Task<GradeComponentDto> AddGradeComponentAsync(
             GradeComponentCreateDto input,
             CancellationToken cancellationToken = default)
@@ -91,6 +98,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<GradeComponent, GradeComponentDto>(gradeComponent);
     }
 
+    [Authorize(AutomationPermissions.Courses.Edit)]
     public virtual async Task<GradeComponentDto> UpdateGradeComponentAsync(
         GradeComponentUpdateDto input,
         Guid gradeComponentId,
@@ -101,6 +109,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<GradeComponent, GradeComponentDto>(updatedGradeComponent);
     }
 
+    [Authorize(AutomationPermissions.Courses.Delete)]
     public virtual async Task RemoveGradeComponentAsync(
         Guid courseId,
         Guid gradeComponentId,
@@ -109,10 +118,10 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         await courseManager.RemoveGradeComponentAsync(
             courseId, gradeComponentId, cancellationToken);
     }
-    #endregion
+#endregion
 
-    #region CourseSessions service methods
-
+#region CourseSessions service methods
+    [Authorize(AutomationPermissions.Courses.Create)]
     public virtual async Task<CourseSessionDto> AddCourseSessionAsync(
         CourseSessionCreateDto input,
         CancellationToken cancellationToken = default)
@@ -123,6 +132,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<CourseSession, CourseSessionDto>(session);
     }
 
+    [Authorize(AutomationPermissions.Courses.Edit)]
     public virtual async Task<CourseSessionDto> UpdateCourseSessionAsync(
         Guid courseSessionId,
         CourseSessionUpdateDto input,
@@ -133,6 +143,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<CourseSession, CourseSessionDto>(updateCourseSession);
     }
 
+    [Authorize(AutomationPermissions.Courses.Delete)]
     public virtual async Task RemoveCourseSessionAsync(
         Guid courseId,
         Guid courseSessionId,
@@ -141,7 +152,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         await courseManager.RemoveCourseSessionAsync(
             courseId, courseSessionId, cancellationToken);
     }
-    #endregion
+#endregion
     private static TimeRange ToTimeRange(TimeRangeDto dto)
     {
         return new TimeRange(dto.Start, dto.End);

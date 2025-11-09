@@ -104,7 +104,7 @@ public class EfCoreTeacherRepository(IDbContextProvider<AutomationDbContext> dbC
                     .WhereIf(!string.IsNullOrWhiteSpace(filterText), e => e.FirstName.Contains(filterText!) || e.LastName.Contains(filterText!) || e.EmailAddress.Contains(filterText!) || e.PhoneNumber.Contains(filterText!))
                     .WhereIf(!string.IsNullOrWhiteSpace(firstName), e => e.FirstName.Contains(firstName!))
                     .WhereIf(!string.IsNullOrWhiteSpace(lastName), e => e.LastName.Contains(lastName!))
-                    .WhereIf(enumGender.HasValue, e => e.Gender.Equals(enumGender))
+                    .WhereIf(enumGender.HasValue, e => e.EnumGender.Equals(enumGender))
                     .WhereIf(!string.IsNullOrWhiteSpace(emailAddress), e => e.EmailAddress.Contains(emailAddress!))
                     .WhereIf(!string.IsNullOrWhiteSpace(phoneNumber), e => e.PhoneNumber.Contains(phoneNumber!))
                     .WhereIf(departmentId.HasValue, e => e.DepartmentId.Equals(departmentId));
@@ -121,7 +121,7 @@ public class EfCoreTeacherRepository(IDbContextProvider<AutomationDbContext> dbC
                     .WhereIf(!string.IsNullOrWhiteSpace(filterText), e => e.Teacher.FirstName.Contains(filterText!) || e.Teacher.LastName.Contains(filterText!) || e.Teacher.EmailAddress.Contains(filterText!) || e.Teacher.PhoneNumber.Contains(filterText!))
                     .WhereIf(!string.IsNullOrWhiteSpace(firstName), e => e.Teacher.FirstName.Contains(firstName!))
                     .WhereIf(!string.IsNullOrWhiteSpace(lastName), e => e.Teacher.LastName.Contains(lastName!))
-                    .WhereIf(enumGender.HasValue, e => e.Teacher.Gender.Equals(enumGender))
+                    .WhereIf(enumGender.HasValue, e => e.Teacher.EnumGender.Equals(enumGender))
                     .WhereIf(!string.IsNullOrWhiteSpace(emailAddress), e => e.Teacher.EmailAddress.Contains(emailAddress!))
                     .WhereIf(!string.IsNullOrWhiteSpace(phoneNumber), e => e.Teacher.PhoneNumber.Contains(phoneNumber!))
                     .WhereIf(departmentId.HasValue, e => e.Department.Id.Equals(departmentId));

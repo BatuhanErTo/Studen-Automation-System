@@ -1,4 +1,5 @@
-﻿using Pusula.Student.Automation.Departments;
+﻿using Pusula.Student.Automation.Courses;
+using Pusula.Student.Automation.Departments;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,4 +12,5 @@ public class TeacherWithNavigationPropertiesDto
 {
     public TeacherDto TeacherDto { get; set; }
     public DepartmentDto DepartmentDto {  get; set; }
+    public List<CourseDto>? CourseDtos { get; set; }
 }

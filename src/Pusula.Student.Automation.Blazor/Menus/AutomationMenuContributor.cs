@@ -51,6 +51,15 @@ public class AutomationMenuContributor : IMenuContributor
         administration.SetSubItemOrder(IdentityMenuNames.GroupName, 2);
         administration.SetSubItemOrder(SettingManagementMenus.GroupName, 3);
 
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                AutomationMenus.Teachers,
+                l["Menu:Teachers"],
+                url: "/teachers",
+                icon: "fa fa-file-alt",
+                requiredPermissionName: AutomationPermissions.Teachers.Default)
+        );
+
         return Task.CompletedTask;
     }
 }

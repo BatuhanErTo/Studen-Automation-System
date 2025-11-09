@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Pusula.Student.Automation.EntityFrameworkCore;
 using Pusula.Student.Automation.Enums;
+using Pusula.Student.Automation.GlobalExceptions;
 using Pusula.Student.Automation.Teachers;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Linq.Dynamic.Core;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -28,7 +30,26 @@ public class EfCoreCourseRepository(IDbContextProvider<AutomationDbContext> dbCo
         var queryable = await GetQueryableAsync();
         var query = ApplyFilter(queryable, filterText, courseName, credits, startFrom, endTo, teacherId);
         query = query.OrderBy(!string.IsNullOrWhiteSpace(sort) ? sort : CourseConsts.GetDefaultSorting(false));
-        return await query.PageBy(skipCount, maxResultCount).ToListAsync(cancellationToken);
+        return await query
+            .Include(c => c.GradeComponents)
+            .Include(c => c.CourseSessions)
+            .PageBy(skipCount, maxResultCount).ToListAsync(cancellationToken);
+    }
+
+    public virtual async Task<Course> GetWithDetailsAsync(Guid id, bool asNoTracking = false, CancellationToken cancellationToken = default)
+    {
+        var query = (await GetDbSetAsync())
+            .Where(c => c.Id == id)
+            .Include(c => c.GradeComponents)
+            .Include(c => c.CourseSessions)
+            .AsSplitQuery(); 
+
+        if (asNoTracking)
+            query = query.AsNoTracking();
+
+        var entity = await query.FirstOrDefaultAsync(cancellationToken);
+
+        return entity ?? throw new EntityNotFoundException(typeof(Course), id);
     }
 
     protected virtual IQueryable<Course> ApplyFilter(
