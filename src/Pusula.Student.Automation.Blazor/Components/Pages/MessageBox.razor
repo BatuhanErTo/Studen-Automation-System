@@ -1,0 +1,75 @@
+﻿@page "/message-box"
+@attribute [Authorize(Roles = Roles.StudentRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Enrollments
+@using Pusula.Student.Automation.Enrollments.TeacherComments
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject IStudentAppService StudentAppService
+@inject IEnrollmentAppService EnrollmentAppService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="Message Box" />
+
+@if (!_loaded)
+{
+    <Row class="w-100 align-items-center" style="height: 150px;">
+        <Column>
+            <RadarSpinner />
+        </Column>
+    </Row>
+}
+else if (!_studentId.HasValue)
+{
+    <Alert Color="Color.Warning">
+        We couldn't find a student record for the signed-in user.
+    </Alert>
+}
+else if (_items.Count == 0)
+{
+    <Alert Color="Color.Info">
+        You have no teacher comments yet.
+    </Alert>
+}
+else
+{
+    @foreach (var item in _items)
+    {
+        <Card class="mb-3">
+            <CardHeader>
+                <strong>@item.CourseName</strong>
+            </CardHeader>
+            <CardBody>
+                @if (item.Comments.Count == 0)
+                {
+                    <p class="text-muted mb-0">No comments for this course.</p>
+                }
+                else
+                {
+                    <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true" Class="mb-0">
+                        <Thead>
+                            <Tr>
+                                <Th>Comment</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            @foreach (var c in item.Comments)
+                            {
+                                <Tr>
+                                    <Td>@c.Comment</Td>
+                                </Tr>
+                            }
+                        </Tbody>
+                    </Table>
+                }
+            </CardBody>
+        </Card>
+    }
+}

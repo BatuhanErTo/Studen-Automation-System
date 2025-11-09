@@ -1,0 +1,103 @@
+﻿@page "/grading"
+@attribute [Authorize(Roles = Roles.TeacherRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Enrollments
+@using Pusula.Student.Automation.Enrollments.GradeEntries
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject ICourseAppService CourseAppService
+@inject IEnrollmentAppService EnrollmentAppService
+@inject ITeacherAppService TeacherAppService
+@inject IUiMessageService UiMessageService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="Grading" />
+
+<Card>
+    <CardBody>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Course</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedCourseIdValue"
+                            SelectedValueChanged="OnCourseChanged">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var c in TeacherCourses)
+                        {
+                            <SelectItem Value="@c.Id">@c.CourseName</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Student</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedStudentIdValue"
+                            SelectedValueChanged="OnStudentChanged"
+                            Disabled="@(SelectedCourseIdValue == Guid.Empty)">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var s in EnrolledStudents)
+                        {
+                            <SelectItem Value="@s.Id">@($"{s.FirstName} {s.LastName}")</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+        </Row>
+
+        @if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        {
+            <Divider />
+            <Form id="GradeEntryForm">
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Grade Component</FieldLabel>
+                            <Select TValue="Guid"
+                                    SelectedValue="SelectedGradeComponentId"
+                                    SelectedValueChanged="OnGradeComponentChanged">
+                                @if (GradeComponents.Count == 0)
+                                {
+                                    <SelectItem Value="@Guid.Empty">No grade components</SelectItem>
+                                }
+                                else
+                                {
+                                    <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                                    @foreach (var g in GradeComponents)
+                                    {
+                                        <SelectItem Value="@g.Id">@g.GradeComponentName (@g.Weight)</SelectItem>
+                                    }
+                                }
+                            </Select>
+                        </Field>
+                    </Column>
+                    <Column ColumnSize="ColumnSize.Is6">
+                        <Field>
+                            <FieldLabel>Score</FieldLabel>
+                            <NumericEdit TValue="double" @bind-Value="Score" Min="0" Max="100" />
+                        </Field>
+                    </Column>
+                </Row>
+
+                <ModalFooter>
+                    <SubmitButton Form="GradeEntryForm"
+                                  Clicked="SaveGradeEntryAsync"
+                                  Disabled="@(SelectedGradeComponentId == Guid.Empty)">
+                        Save Grade
+                    </SubmitButton>
+                </ModalFooter>
+            </Form>
+        }
+    </CardBody>
+</Card>

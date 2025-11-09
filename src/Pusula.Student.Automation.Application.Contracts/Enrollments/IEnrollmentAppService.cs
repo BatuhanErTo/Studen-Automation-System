@@ -3,8 +3,6 @@ using Pusula.Student.Automation.Enrollments.GradeEntries;
 using Pusula.Student.Automation.Enrollments.TeacherComments;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -20,11 +18,7 @@ public interface IEnrollmentAppService : IApplicationService
     Task<EnrollmentDto> CreateAsync(EnrollmentCreateDto input);
     Task<EnrollmentDto> UpdateAsync(Guid id, EnrollmentUpdateDto input);
     Task DeleteAsync(Guid id);
-
-    // Enroll/Unenroll
-    Task<EnrollmentDto> EnrollStudentAsync(Guid studentId, Guid courseId, CancellationToken cancellationToken = default);
     Task UnenrollStudentAsync(Guid studentId, Guid courseId, CancellationToken cancellationToken = default);
-
     // Comments
     Task AddTeacherCommentAsync(TeacherCommentCreateDto input, CancellationToken cancellationToken = default);
     Task RemoveTeacherCommentAsync(Guid enrollmentId, Guid teacherCommentId, CancellationToken cancellationToken = default);
@@ -43,4 +37,8 @@ public interface IEnrollmentAppService : IApplicationService
     Task UpdateAttendanceEntryAsync(Guid attendanceEntryId, AttendanceEntryUpdateDto input, CancellationToken cancellationToken = default);
     Task RemoveAttendanceEntryAsync(Guid enrollmentId, Guid attendanceEntryId, CancellationToken cancellationToken = default);
     Task<List<AttendanceEntryDto>> GetAttendanceAsync(Guid courseId, Guid studentId, DateOnly? dateFrom, DateOnly? dateTo, CancellationToken cancellationToken = default);
+
+    // Navigation
+    Task<EnrollmentWithNavigationPropertiesDto> GetWithNavigationAsync(Guid id);
+    Task<PagedResultDto<EnrollmentWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetEnrollmentsInput input);
 }

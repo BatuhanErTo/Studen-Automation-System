@@ -1,16 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Pusula.Student.Automation.Enums;
 using Pusula.Student.Automation.Permissions;
-using Pusula.Student.Automation.Teachers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Identity;
-using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Pusula.Student.Automation.Students;
@@ -60,6 +57,24 @@ public class StudentAppService(
         return ObjectMapper.Map<StudentEntity, StudentDto>(student);
     }
 
+    [Authorize(AutomationPermissions.Enrollments.Create)]
+    public virtual async Task<PagedResultDto<StudentDto>> GetAvailableStudentListAsync(Guid courseId, string? filterText = null, int skip = 0, int take = 20)
+    {
+        var totalCount = await studentRepository.GetAvailableForCourseCountAsync(courseId, filterText);
+        var items = await studentRepository.GetAvailableForCourseListAsync(
+            courseId,
+            filterText,
+            StudentConsts.GetDefaultSorting(false),
+            take,
+            skip);
+
+        return new PagedResultDto<StudentDto>
+        {
+            TotalCount = totalCount,
+            Items = ObjectMapper.Map<List<StudentEntity>, List<StudentDto>>(items)
+        };
+    }
+
     public virtual async Task<PagedResultDto<StudentWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetStudentsInput input)
     {
         long totalCount = await studentRepository.GetCountAsync(
@@ -101,6 +116,7 @@ public class StudentAppService(
 
         return ObjectMapper.Map<StudentWithNavigationProperties, StudentWithNavigationPropertiesDto>(studentWithNavigationProperty);
     }
+
     [Authorize(AutomationPermissions.Students.Edit)]
     public virtual async Task<StudentDto> UpdateAsync(Guid id, StudentUpdateDto input)
     {

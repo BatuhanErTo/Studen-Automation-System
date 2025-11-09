@@ -1,0 +1,126 @@
+﻿@page "/attendance"
+@attribute [Authorize(Roles = Roles.TeacherRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Enrollments
+@using Pusula.Student.Automation.Enrollments.AttendanceEntries
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject ICourseAppService CourseAppService
+@inject IEnrollmentAppService EnrollmentAppService
+@inject ITeacherAppService TeacherAppService
+@inject IUiMessageService UiMessageService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="Attendance Entry" />
+
+<Card>
+    <CardBody>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Course</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedCourseIdValue"
+                            SelectedValueChanged="OnCourseChanged">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var c in TeacherCourses)
+                        {
+                            <SelectItem Value="@c.Id">@c.CourseName</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Student</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedStudentIdValue"
+                            SelectedValueChanged="OnStudentChanged"
+                            Disabled="@(SelectedCourseIdValue == Guid.Empty)">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var s in EnrolledStudents)
+                        {
+                            <SelectItem Value="@s.Id">@($"{s.FirstName} {s.LastName}")</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+        </Row>
+
+        @if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        {
+            <Divider />
+            <Form id="AttendanceForm">
+                <Row>
+                    <Column ColumnSize="ColumnSize.Is4">
+                        <Field>
+                            <FieldLabel>Date</FieldLabel>
+                            <DateEdit TValue="DateOnly" @bind-Date="Date" />
+                        </Field>
+                    </Column>
+
+                    <Column ColumnSize="ColumnSize.Is4">
+                        <Field>
+                            <FieldLabel>Session</FieldLabel>
+                            <Select TValue="Guid"
+                                    SelectedValue="SelectedCourseSessionId"
+                                    SelectedValueChanged="OnCourseSessionChanged">
+                                @if (CourseSessions.Count == 0)
+                                {
+                                    <SelectItem Value="@Guid.Empty">No sessions</SelectItem>
+                                }
+                                else
+                                {
+                                    <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                                    @foreach (var cs in CourseSessions)
+                                    {
+                                        <SelectItem Value="@cs.Id">@($"{cs.Day} {cs.Time.Start}-{cs.Time.End}")</SelectItem>
+                                    }
+                                }
+                            </Select>
+                        </Field>
+                    </Column>
+
+                    <Column ColumnSize="ColumnSize.Is4">
+                        <Field>
+                            <FieldLabel>Status</FieldLabel>
+                            <Select TValue="int"
+                                    SelectedValue="SelectedAttendanceStatus"
+                                    SelectedValueChanged="OnAttendanceStatusChanged">
+                                <SelectItem Value="0">Present</SelectItem>
+                                <SelectItem Value="1">Absent</SelectItem>
+                            </Select>
+                        </Field>
+                    </Column>
+                </Row>
+
+                <Row>
+                    <Column>
+                        <Field>
+                            <FieldLabel>Absent Reason</FieldLabel>
+                            <TextEdit Text="@AbsentReason" TextChanged="(v) => AbsentReason = v" Disabled="@(SelectedAttendanceStatus == 0)" />
+                        </Field>
+                    </Column>
+                </Row>
+
+                <ModalFooter>
+                    <SubmitButton Form="AttendanceForm"
+                                  Clicked="SaveAttendanceAsync"
+                                  Disabled="@(SelectedCourseSessionId == Guid.Empty)">
+                        Save Attendance
+                    </SubmitButton>
+                </ModalFooter>
+            </Form>
+        }
+    </CardBody>
+</Card>

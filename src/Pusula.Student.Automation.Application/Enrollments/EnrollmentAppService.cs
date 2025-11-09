@@ -5,8 +5,6 @@ using Pusula.Student.Automation.Enrollments.TeacherComments;
 using Pusula.Student.Automation.Permissions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -62,14 +60,6 @@ public class EnrollmentAppService(
         return ObjectMapper.Map<Enrollment, EnrollmentDto>(updated);
     }
 
-    // Enroll/Unenroll
-    [Authorize(AutomationPermissions.Enrollments.Create)]
-    public virtual async Task<EnrollmentDto> EnrollStudentAsync(Guid studentId, Guid courseId, CancellationToken cancellationToken = default)
-    {
-        var enrollment = await enrollmentManager.CreateEnrollmentAsync(studentId, courseId, cancellationToken);
-        return ObjectMapper.Map<Enrollment, EnrollmentDto>(enrollment);
-    }
-
     [Authorize(AutomationPermissions.Enrollments.Delete)]
     public virtual async Task UnenrollStudentAsync(Guid studentId, Guid courseId, CancellationToken cancellationToken = default)
     {
@@ -81,13 +71,13 @@ public class EnrollmentAppService(
     }
 
     // Comments
-    [Authorize(AutomationPermissions.Enrollments.Edit)]
+    [Authorize(AutomationPermissions.Enrollments.TeacherComments.Edit)]
     public virtual async Task AddTeacherCommentAsync(TeacherCommentCreateDto input, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.AddTeacherCommentAsync(input.EnrollmentId, input.Comment, cancellationToken);
     }
 
-    [Authorize(AutomationPermissions.Enrollments.Delete)]
+    [Authorize(AutomationPermissions.Enrollments.TeacherComments.Delete)]
     public virtual async Task RemoveTeacherCommentAsync(Guid enrollmentId, Guid teacherCommentId, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.RemoveTeacherCommentAsync(enrollmentId, teacherCommentId, cancellationToken);
@@ -100,20 +90,20 @@ public class EnrollmentAppService(
     }
 
     // Grades
-    [Authorize(AutomationPermissions.Enrollments.Create)]
+    [Authorize(AutomationPermissions.Enrollments.GradeEntries.Create)]
     public virtual async Task<GradeEntryDto> AddGradeEntryAsync(GradeEntryCreateDto input, CancellationToken cancellationToken = default)
     {
         var entry = await enrollmentManager.AddGradeEntryAsync(input.EnrollmentId, input.GradeComponentId, input.Score, cancellationToken);
         return ObjectMapper.Map<GradeEntry, GradeEntryDto>(entry);
     }
 
-    [Authorize(AutomationPermissions.Enrollments.Edit)]
+    [Authorize(AutomationPermissions.Enrollments.GradeEntries.Edit)]
     public virtual async Task UpdateGradeEntryAsync(Guid gradeEntryId, GradeEntryUpdateDto input, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.UpdateGradeEntryAsync(input.EnrollmentId, gradeEntryId, input.Score, cancellationToken);
     }
 
-    [Authorize(AutomationPermissions.Enrollments.Delete)]
+    [Authorize(AutomationPermissions.Enrollments.GradeEntries.Delete)]
     public virtual async Task RemoveGradeEntryAsync(Guid enrollmentId, Guid gradeEntryId, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.RemoveGradeEntryAsync(enrollmentId, gradeEntryId, cancellationToken);
@@ -142,20 +132,20 @@ public class EnrollmentAppService(
     }
 
     // Attendance
-    [Authorize(AutomationPermissions.Enrollments.Create)]
+    [Authorize(AutomationPermissions.Enrollments.AttendanceEntries.Create)]
     public virtual async Task<AttendanceEntryDto> AddAttendanceEntryAsync(AttendanceEntryCreateDto input, CancellationToken cancellationToken = default)
     {
         var entry = await enrollmentManager.AddAttendanceEntryAsync(input.EnrollmentId, input.Date, input.CourseSessionId, input.AttendanceStatus, input.AbsentReason, cancellationToken);
         return ObjectMapper.Map<AttendanceEntry, AttendanceEntryDto>(entry);
     }
 
-    [Authorize(AutomationPermissions.Enrollments.Edit)]
+    [Authorize(AutomationPermissions.Enrollments.AttendanceEntries.Edit)]
     public virtual async Task UpdateAttendanceEntryAsync(Guid attendanceEntryId, AttendanceEntryUpdateDto input, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.UpdateAttendanceEntryAsync(input.EnrollmentId, attendanceEntryId, input.AttendanceStatus, input.AbsentReason, cancellationToken);
     }
 
-    [Authorize(AutomationPermissions.Enrollments.Delete)]
+    [Authorize(AutomationPermissions.Enrollments.AttendanceEntries.Delete)]
     public virtual async Task RemoveAttendanceEntryAsync(Guid enrollmentId, Guid attendanceEntryId, CancellationToken cancellationToken = default)
     {
         await enrollmentManager.RemoveAttendanceEntryAsync(enrollmentId, attendanceEntryId, cancellationToken);
@@ -165,5 +155,23 @@ public class EnrollmentAppService(
     {
         var entries = await enrollmentRepository.GetAttendanceAsync(courseId, studentId, dateFrom, dateTo, cancellationToken);
         return ObjectMapper.Map<List<AttendanceEntry>, List<AttendanceEntryDto>>(entries);
+    }
+
+    public virtual async Task<EnrollmentWithNavigationPropertiesDto> GetWithNavigationAsync(Guid id)
+    {
+        var item = await enrollmentRepository.GetWithNavigationAsync(id);
+        return ObjectMapper.Map<EnrollmentWithNavigationProperties, EnrollmentWithNavigationPropertiesDto>(item);
+    }
+
+    public virtual async Task<PagedResultDto<EnrollmentWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetEnrollmentsInput input)
+    {
+        var totalCount = await enrollmentRepository.GetCountAsync(input.CourseId, input.StudentId);
+        var items = await enrollmentRepository.GetListWithNavigationAsync(input.CourseId, input.StudentId, input.Sorting, input.MaxResultCount, input.SkipCount);
+
+        return new PagedResultDto<EnrollmentWithNavigationPropertiesDto>
+        {
+            TotalCount = totalCount,
+            Items = ObjectMapper.Map<List<EnrollmentWithNavigationProperties>, List<EnrollmentWithNavigationPropertiesDto>>(items)
+        };
     }
 }

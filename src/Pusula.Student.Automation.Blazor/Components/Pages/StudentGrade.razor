@@ -1,0 +1,87 @@
+﻿@page "/student-grades"
+@attribute [Authorize(Roles = Roles.StudentRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Enrollments
+@using Pusula.Student.Automation.Enrollments.GradeEntries
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject IStudentAppService StudentAppService
+@inject IEnrollmentAppService EnrollmentAppService
+@inject ICourseAppService CourseAppService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="My Grades" />
+
+@if (!_loaded)
+{
+    <Row class="w-100 align-items-center" style="height: 150px;">
+        <Column>
+            <RadarSpinner />
+        </Column>
+    </Row>
+}
+else if (!_studentId.HasValue)
+{
+    <Alert Color="Color.Warning">
+        We couldn't find a student record for the signed-in user.
+    </Alert>
+}
+else if (_courseGrades.Count == 0)
+{
+    <Alert Color="Color.Info">
+        You have no enrollments yet.
+    </Alert>
+}
+else
+{
+    @foreach (var cg in _courseGrades)
+    {
+        <Card class="mb-3">
+            <CardHeader>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@cg.CourseName</strong>
+                    </div>
+                    <div class="text-muted">
+                        Total: @((cg.TotalScore?.ToString("0.##")) ?? "-")
+                    </div>
+                </div>
+            </CardHeader>
+            <CardBody>
+                @if (cg.Grades.Count == 0)
+                {
+                    <p class="text-muted mb-0">No grade entries.</p>
+                }
+                else
+                {
+                    <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true" Class="mb-0">
+                        <Thead>
+                            <Tr>
+                                <Th>Exams</Th>
+                                <Th class="text-end">Weight</Th>
+                                <Th class="text-end">Score</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            @foreach (var g in cg.Grades)
+                            {
+                                <Tr>
+                                    <Td>@g.ComponentName</Td>
+                                    <Td class="text-end">@g.Weight</Td>
+                                    <Td class="text-end">@g.Score.ToString("0.##")</Td>
+                                </Tr>
+                            }
+                        </Tbody>
+                    </Table>
+                }
+            </CardBody>
+        </Card>
+    }
+}

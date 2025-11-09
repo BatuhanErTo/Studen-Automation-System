@@ -84,6 +84,46 @@ public class AutomationMenuContributor : IMenuContributor
                     url: "/my-courses",
                     icon: "fa fa-list")
             );
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                   AutomationMenus.Grading,
+                    l["Menu:Grading"],
+                    url: "/grading",
+                    icon: "fa fa-clipboard-check")
+            );
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.Attendance,
+                    l["Menu:Attendance"],
+                    url: "/attendance",
+                    icon: "fa fa-calendar-check")
+            );
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                AutomationMenus.TeacherComment,
+                l["Menu:TeacherComment"],
+                url: "/teacher-comment",
+                icon: "fa fa-comments")
+            );
+        }
+
+        if (currentUser.IsInRole(Roles.StudentRole))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.StudentGrade,
+                    l["Menu:StudentGrade"],
+                    url: "/student-grades",
+                    icon: "fa fa-chart-line")
+            );
+
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                AutomationMenus.MessageBox,
+                l["Menu:MessageBox"],
+                url: "/message-box",
+                icon: "fa fa-inbox")
+            );
         }
 
         if (currentUser.IsInRole(Roles.AdminRole) || currentUser.IsInRole(Roles.TeacherRole))

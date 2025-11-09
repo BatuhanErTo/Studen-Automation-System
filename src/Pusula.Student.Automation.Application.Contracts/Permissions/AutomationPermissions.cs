@@ -58,6 +58,30 @@ public static class AutomationPermissions
         public const string Edit = Default + ".Edit";
         public const string Create = Default + ".Create";
         public const string Delete = Default + ".Delete";
+
+        public static class AttendanceEntries        
+        {
+            public const string Default = Enrollments.Default + ".AttendanceEntries";
+            public const string Edit = Default + ".Edit";
+            public const string Create = Default + ".Create";
+            public const string Delete = Default + ".Delete";
+        }
+
+        public static class GradeEntries
+        {
+            public const string Default = Enrollments.Default + ".GradeEntries";
+            public const string Edit = Default + ".Edit";
+            public const string Create = Default + ".Create";
+            public const string Delete = Default + ".Delete";
+        }
+
+        public static class TeacherComments
+        {
+            public const string Default = Enrollments.Default + ".TeacherComments";
+            public const string Edit = Default + ".Edit";
+            public const string Create = Default + ".Create";
+            public const string Delete = Default + ".Delete";
+        }
     }
 
     public static class Departments

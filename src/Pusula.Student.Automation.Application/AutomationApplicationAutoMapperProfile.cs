@@ -25,14 +25,17 @@ public class AutomationApplicationAutoMapperProfile : Profile
 
         CreateMap<TimeRange, TimeRangeDto>();
         CreateMap<Course, CourseDto>();
+        CreateMap<CourseDto, Course>();
         CreateMap<CourseSession, CourseSessionDto>();
         CreateMap<GradeComponent, GradeComponentDto>();
         CreateMap<AttendanceEntry, AttendanceEntryDto>();
         CreateMap<GradeEntry, GradeEntryDto>();
         CreateMap<TeacherComment, TeacherCommentDto>();
         CreateMap<Enrollment, EnrollmentDto>();
-
-
+        CreateMap<EnrollmentWithNavigationProperties, EnrollmentWithNavigationPropertiesDto>()
+           .ForMember(d => d.EnrollmentDto, opt => opt.MapFrom(s => s.Enrollment))
+           .ForMember(d => d.CourseDto, opt => opt.MapFrom(s => s.Course))
+           .ForMember(d => d.StudentDto, opt => opt.MapFrom(s => s.Student));
         CreateMap<Department, DepartmentDto>();
         CreateMap<Department, LookupDto<Guid>>().ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.DepartmentName));
         CreateMap<Teacher, TeacherDto>();

@@ -1,14 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Pusula.Student.Automation.Courses.CourseSessionComponents;
 using Pusula.Student.Automation.Courses.GradeComponents;
-using Pusula.Student.Automation.Enums;
 using Pusula.Student.Automation.Permissions;
 using Pusula.Student.Automation.Shared;
 using Pusula.Student.Automation.ValueObjects;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
@@ -87,7 +84,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
     }
 
 #region GradeComponent service methods
-    [Authorize(AutomationPermissions.Courses.Create)]
+    [Authorize(AutomationPermissions.Courses.GradeComponents.Create)]
     public virtual async Task<GradeComponentDto> AddGradeComponentAsync(
             GradeComponentCreateDto input,
             CancellationToken cancellationToken = default)
@@ -98,7 +95,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<GradeComponent, GradeComponentDto>(gradeComponent);
     }
 
-    [Authorize(AutomationPermissions.Courses.Edit)]
+    [Authorize(AutomationPermissions.Courses.GradeComponents.Edit)]
     public virtual async Task<GradeComponentDto> UpdateGradeComponentAsync(
         GradeComponentUpdateDto input,
         Guid gradeComponentId,
@@ -109,7 +106,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<GradeComponent, GradeComponentDto>(updatedGradeComponent);
     }
 
-    [Authorize(AutomationPermissions.Courses.Delete)]
+    [Authorize(AutomationPermissions.Courses.GradeComponents.Delete)]
     public virtual async Task RemoveGradeComponentAsync(
         Guid courseId,
         Guid gradeComponentId,
@@ -121,7 +118,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
 #endregion
 
 #region CourseSessions service methods
-    [Authorize(AutomationPermissions.Courses.Create)]
+    [Authorize(AutomationPermissions.Courses.CourseSessions.Create)]
     public virtual async Task<CourseSessionDto> AddCourseSessionAsync(
         CourseSessionCreateDto input,
         CancellationToken cancellationToken = default)
@@ -132,7 +129,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<CourseSession, CourseSessionDto>(session);
     }
 
-    [Authorize(AutomationPermissions.Courses.Edit)]
+    [Authorize(AutomationPermissions.Courses.CourseSessions.Edit)]
     public virtual async Task<CourseSessionDto> UpdateCourseSessionAsync(
         Guid courseSessionId,
         CourseSessionUpdateDto input,
@@ -143,7 +140,7 @@ public class CourseAppService(ICourseRepository courseRepository, CourseManager 
         return ObjectMapper.Map<CourseSession, CourseSessionDto>(updateCourseSession);
     }
 
-    [Authorize(AutomationPermissions.Courses.Delete)]
+    [Authorize(AutomationPermissions.Courses.CourseSessions.Delete)]
     public virtual async Task RemoveCourseSessionAsync(
         Guid courseId,
         Guid courseSessionId,

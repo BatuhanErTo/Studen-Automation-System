@@ -95,6 +95,35 @@ public class EfCoreStudentRepository(IDbContextProvider<AutomationDbContext> dbC
         return query;
     }
 
+    public async Task<long> GetAvailableForCourseCountAsync(
+    Guid courseId,
+    string? filterText = null,
+    CancellationToken cancellationToken = default)
+    {
+        var db = await GetDbContextAsync();
+        var baseQuery = BuildAvailableStudentsQuery(db, courseId, filterText);
+        return await baseQuery.LongCountAsync(cancellationToken);
+    }
+
+    public async Task<List<StudentEntity>> GetAvailableForCourseListAsync(
+    Guid courseId,
+    string? filterText = null,
+    string? sort = null,
+    int maxResultCount = int.MaxValue,
+    int skipCount = 0,
+    CancellationToken cancellationToken = default)
+    {
+        var db = await GetDbContextAsync();
+        var baseQuery = BuildAvailableStudentsQuery(db, courseId, filterText);
+
+        var ordered = baseQuery.OrderBy(!string.IsNullOrWhiteSpace(sort)
+            ? sort
+            : StudentConsts.GetDefaultSorting(false));
+
+        return await ordered
+            .PageBy(skipCount, maxResultCount)
+            .ToListAsync(cancellationToken);
+    }
     protected virtual IQueryable<StudentEntity> ApplyFilter(
             IQueryable<StudentEntity> query,
             string? filterText = null,
@@ -143,5 +172,42 @@ public class EfCoreStudentRepository(IDbContextProvider<AutomationDbContext> dbC
                     .WhereIf(!string.IsNullOrWhiteSpace(address), e => e.Student.Address.Contains(address!))
                     .WhereIf(!string.IsNullOrWhiteSpace(emailAddress), e => e.Student.EmailAddress.Contains(emailAddress!))
                     .WhereIf(!string.IsNullOrWhiteSpace(phoneNumber), e => e.Student.PhoneNumber.Contains(phoneNumber!))
-                    .WhereIf(departmentId.HasValue, e => e.Department.Id.Equals(departmentId));
+                    .WhereIf(departmentId.HasValue, e => e.Student.DepartmentId.Equals(departmentId));
+    private IQueryable<StudentEntity> BuildAvailableStudentsQuery(
+    DbContext db,
+    Guid courseId,
+    string? filterText)
+    {
+        var students = db.Set<StudentEntity>();
+        var enrollments = db.Set<Enrollment>();
+        var courseSessions = db.Set<CourseSession>();
+
+        var selectedCourseSession = db.Set<CourseSession>().Where(ts => ts.CourseId == courseId);
+
+        var conflictedStudentIds =
+            from e in enrollments
+            where e.CourseId != courseId
+            join cs in courseSessions on e.CourseId equals cs.CourseId
+            join ts in selectedCourseSession on cs.Day equals ts.Day
+            where cs.Time.End > ts.Time.Start && ts.Time.End > cs.Time.Start
+            select e.StudentId;
+
+        var query =
+            from s in students
+            where
+                !enrollments.Any(e => e.CourseId == courseId && e.StudentId == s.Id)
+                && !conflictedStudentIds.Contains(s.Id)
+            select s;
+
+        if (!string.IsNullOrWhiteSpace(filterText))
+        {
+            query = query.Where(s =>
+                s.FirstName.Contains(filterText) ||
+                s.LastName.Contains(filterText) ||
+                s.EmailAddress.Contains(filterText) ||
+                s.PhoneNumber.Contains(filterText));
+        }
+
+        return query;
+    }
 }

@@ -77,4 +77,18 @@ public interface IStudentRepository : IRepository<StudentEntity, Guid>
             string? phoneNumber = null,
             Guid? departmentId = null,
             CancellationToken cancellationToken = default);
+
+    // Available for enrollment (not enrolled to courseId and no session overlaps with that course)
+    Task<long> GetAvailableForCourseCountAsync(
+        Guid courseId,
+        string? filterText = null,
+        CancellationToken cancellationToken = default);
+
+    Task<List<StudentEntity>> GetAvailableForCourseListAsync(
+        Guid courseId,
+        string? filterText = null,
+        string? sort = null,
+        int maxResultCount = int.MaxValue,
+        int skipCount = 0,
+        CancellationToken cancellationToken = default);
 }

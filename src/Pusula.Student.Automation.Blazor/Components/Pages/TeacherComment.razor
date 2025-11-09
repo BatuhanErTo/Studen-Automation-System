@@ -1,0 +1,110 @@
+﻿@page "/teacher-comment"
+@attribute [Authorize(Roles = Roles.TeacherRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Students
+@using Pusula.Student.Automation.Enrollments
+@using Pusula.Student.Automation.Enrollments.TeacherComments
+@using Volo.Abp.AspNetCore.Components.Messages
+@using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
+@using Volo.Abp.Users
+
+@inherits AutomationComponentBase
+
+@inject ICourseAppService CourseAppService
+@inject IEnrollmentAppService EnrollmentAppService
+@inject ITeacherAppService TeacherAppService
+@inject IUiMessageService UiMessageService
+@inject ICurrentUser CurrentUser
+
+<PageHeader Title="Teacher Comment" />
+
+<Card>
+    <CardBody>
+        <Row>
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Course</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedCourseIdValue"
+                            SelectedValueChanged="OnCourseChanged">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var c in TeacherCourses)
+                        {
+                            <SelectItem Value="@c.Id">@c.CourseName</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+
+            <Column ColumnSize="ColumnSize.Is6">
+                <Field>
+                    <FieldLabel>Student</FieldLabel>
+                    <Select TValue="Guid"
+                            SelectedValue="SelectedStudentIdValue"
+                            SelectedValueChanged="OnStudentChanged"
+                            Disabled="@(SelectedCourseIdValue == Guid.Empty)">
+                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
+                        @foreach (var s in EnrolledStudents)
+                        {
+                            <SelectItem Value="@s.Id">@($"{s.FirstName} {s.LastName}")</SelectItem>
+                        }
+                    </Select>
+                </Field>
+            </Column>
+        </Row>
+
+        @if (SelectedCourseIdValue != Guid.Empty && SelectedStudentIdValue != Guid.Empty)
+        {
+            <Divider />
+
+            <Row>
+                <Column>
+                    <Field>
+                        <FieldLabel>New Comment</FieldLabel>
+                        <MemoEdit @bind-Text="NewCommentText" Rows="4" />
+                    </Field>
+                </Column>
+            </Row>
+
+            <ModalFooter>
+                <SubmitButton Clicked="SaveTeacherCommentAsync" Disabled="@string.IsNullOrWhiteSpace(NewCommentText)">
+                    Add Comment
+                </SubmitButton>
+            </ModalFooter>
+
+            <Divider />
+
+            <h5>Existing Comments</h5>
+            @if (Comments.Count == 0)
+            {
+                <p class="text-muted">No comments.</p>
+            }
+            else
+            {
+                <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true">
+                    <Thead>
+                        <Tr>
+                            <Th>Comment</Th>
+                            <Th style="width: 120px;"></Th>
+                        </Tr>
+                    </Thead>
+                    <Tbody>
+                        @foreach (var c in Comments)
+                        {
+                            <Tr>
+                                <Td>@c.Comment</Td>
+                                <Td class="text-end">
+                                    <Button Size="Size.Small" Color="Color.Danger" Clicked="() => RemoveCommentAsync(c.Id)">Delete</Button>
+                                </Td>
+                            </Tr>
+                        }
+                    </Tbody>
+                </Table>
+            }
+        }
+    </CardBody>
+</Card>

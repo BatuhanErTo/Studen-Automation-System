@@ -1,21 +1,26 @@
 ﻿@page "/my-courses"
 @attribute [Authorize(Roles = Roles.TeacherRole)]
 
+@using Pusula.Student.Automation.Enrollments
 @using Pusula.Student.Automation.Localization
 @using Pusula.Student.Automation.Enums
 @using Pusula.Student.Automation.Courses
 @using Pusula.Student.Automation.Courses.CourseSessionComponents
 @using Pusula.Student.Automation.Courses.GradeComponents
 @using Pusula.Student.Automation.Shared
+@using Pusula.Student.Automation.Students
 @using Pusula.Student.Automation.Teachers
 @using Volo.Abp.AspNetCore.Components.Messages
 @using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
 @using Volo.Abp.Users
+@using Blazorise.DataGrid
 
 @inherits AutomationComponentBase
 
 @inject ICourseAppService CourseAppService
 @inject ITeacherAppService TeacherAppService
+@inject IStudentAppService StudentAppService
+@inject IEnrollmentAppService EnrollmentAppService
 @inject IUiMessageService UiMessageService
 @inject ICurrentUser CurrentUser
 
@@ -49,6 +54,21 @@
             </EmptyTemplate>
 
             <DataGridColumns>
+                <DataGridEntityActionsColumn TItem="CourseDto" @ref="@EntityActionsColumn">
+                    <DisplayTemplate>
+                        <EntityActions TItem="CourseDto" EntityActionsColumn="@EntityActionsColumn">
+                            <EntityAction TItem="CourseDto"
+                                          Text="@L["Edit"]"
+                                          Clicked="() => OpenEditStatusModal(context)">
+                            </EntityAction>
+                            <EntityAction TItem="CourseDto"
+                                          Text="@L["Details"]"
+                                          Clicked="() => OpenDetailsModalAsync(context.Id)">
+                            </EntityAction>
+                        </EntityActions>
+                    </DisplayTemplate>
+                </DataGridEntityActionsColumn>
+
                 <DataGridColumn TItem="CourseDto" Field="CourseName" Caption="@L["CourseName"]">
                     <DisplayTemplate>@context.CourseName</DisplayTemplate>
                 </DataGridColumn>
@@ -58,47 +78,272 @@
                 </DataGridColumn>
 
                 <DataGridColumn TItem="CourseDto" Field="Status" Caption="@L["Status"]">
+                    <DisplayTemplate>@context.Status.ToString()</DisplayTemplate>
+                </DataGridColumn>
+
+                <DataGridColumn TItem="CourseDto" Caption="@L["CourseSessions"]">
                     <DisplayTemplate>
-                        <Select TValue="EnumCourseStatus" Value="EditingStatuses[context.Id]" ValueChanged="(val)=>OnStatusChanged(context.Id,val)">
-                            @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
-                            {
-                                <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
-                            }
-                        </Select>
-                        <Button Size="Size.Small" Class="ms-2" Clicked="() => SaveStatusAsync(context.Id)">@L["Save"]</Button>
+                        <Button Size="Size.Small" Color="Color.Primary" Clicked="() => OpenAddSessionModal(context.Id)">
+                            @L["AddCourseSession"]
+                        </Button>
                     </DisplayTemplate>
                 </DataGridColumn>
 
-                <DataGridColumn TItem="CourseDto" Caption="@L["AddCourseSession"]">
+                <DataGridColumn TItem="CourseDto" Caption="@L["GradeComponents"]">
                     <DisplayTemplate>
-                        <div class="d-flex flex-wrap align-items-center gap-2">
-                            <Select TValue="EnumWeekDay" Value="SessionInputs[context.Id].Day" ValueChanged="(d)=>OnSessionDayChanged(context.Id,d)">
-                                @foreach (EnumWeekDay d in Enum.GetValues(typeof(EnumWeekDay)))
-                                {
-                                    <SelectItem Value="@d">@L[$"EnumWeekDay:{d}"]</SelectItem>
-                                }
-                            </Select>
-
-                            <TimeEdit TValue="TimeOnly" Time="SessionInputs[context.Id].Time.Start" TimeChanged="(t) => OnSessionStartChanged(context.Id, t)" />
-                            <TimeEdit TValue="TimeOnly" Time="SessionInputs[context.Id].Time.End" TimeChanged="(t) => OnSessionEndChanged(context.Id, t)" />
-
-                            <Button Size="Size.Small" Clicked="() => AddSessionAsync(context.Id)">@L["Add"]</Button>
-                        </div>
+                        <Button Size="Size.Small" Color="Color.Primary" Clicked="() => OpenAddGradeModal(context.Id)">
+                            @L["AddGradeComponent"]
+                        </Button>
                     </DisplayTemplate>
                 </DataGridColumn>
 
-                <DataGridColumn TItem="CourseDto" Caption="@L["AddGradeComponent"]">
+                <DataGridColumn TItem="CourseDto" Caption="@L["Enrollments"]">
                     <DisplayTemplate>
-                        <div class="d-flex flex-wrap align-items-center gap-2">
-                            <TextEdit Text="GradeInputs[context.Id].GradeComponentName" TextChanged="(v) => OnGradeNameChanged(context.Id, v)" Placeholder="@L["Name"]" />
-                            <NumericEdit TValue="int" Value="GradeInputs[context.Id].Order" ValueChanged="(v) => OnGradeOrderChanged(context.Id, v)" />
-                            <NumericEdit TValue="int" Value="GradeInputs[context.Id].Weight" ValueChanged="(v) => OnGradeWeightChanged(context.Id, v)" />
-                            <Button Size="Size.Small" Clicked="() => AddGradeComponentAsync(context.Id)">@L["Add"]</Button>
-                        </div>
+                        <Button Size="Size.Small" Color="Color.Primary" Clicked="() => OpenEnrollModal(context.Id)">
+                            @L["EnrollStudent"]
+                        </Button>
                     </DisplayTemplate>
                 </DataGridColumn>
             </DataGridColumns>
         </DataGrid>
     </CardBody>
 </Card>
+
+@* ----- Add Course Session Modal ----- *@
+<Modal @ref="AddSessionModal" Closing="@AddSessionModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="AddSessionForm">
+            <ModalHeader>
+                <ModalTitle>@L["AddCourseSession"]</ModalTitle>
+                <CloseButton Clicked="CloseAddSessionModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@SessionValidations" Mode="ValidationMode.Auto" ValidateOnLoad="false" Model="@CurrentSession">
+                    <Field>
+                        <FieldLabel>@L["Day"] *</FieldLabel>
+                        <Select TValue="int"
+                                SelectedValue="SelectedDayValue"
+                                SelectedValueChanged="OnSelectedDayChanged">
+                            @foreach (var d in Enum.GetValues<EnumWeekDay>())
+                            {
+                                <SelectItem Value="@((int)d)">@L[$"EnumWeekDay:{d}"]</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+
+
+                    <Field>
+                        <FieldLabel>@L["Start"] *</FieldLabel>
+                        <TimeEdit TValue="TimeOnly" @bind-Time="CurrentSession.Time.Start" />
+                    </Field>
+
+                    <Field>
+                        <FieldLabel>@L["End"] *</FieldLabel>
+                        <TimeEdit TValue="TimeOnly" @bind-Time="CurrentSession.Time.End" />
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseAddSessionModalAsync">@L["Cancel"]</Button>
+                <SubmitButton Form="AddSessionForm" Clicked="SaveSessionAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ----- Edit Status Modal ----- *@
+<Modal @ref="EditStatusModal" Closing="@EditStatusModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EditStatusForm">
+            <ModalHeader>
+                <ModalTitle>@L["Update"]</ModalTitle>
+                <CloseButton Clicked="CloseEditStatusModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@EditStatusValidations" Mode="ValidationMode.Auto" ValidateOnLoad="false">
+                    <Field>
+                        <FieldLabel>@L["Status"] *</FieldLabel>
+                        <Select TValue="int"
+                                SelectedValue="SelectedStatusValue"
+                                SelectedValueChanged="OnSelectedStatusChanged">
+                            @foreach (var s in Enum.GetValues<EnumCourseStatus>())
+                            {
+                                <SelectItem Value="@((int)s)">@L[$"EnumCourseStatus:{s}"]</SelectItem>
+                            }
+                        </Select>
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseEditStatusModalAsync">@L["Cancel"]</Button>
+                <SubmitButton Form="EditStatusForm" Clicked="SaveStatusFromModalAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ----- Add Grade Component Modal ----- *@
+<Modal @ref="AddGradeModal" Closing="@AddGradeModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="AddGradeForm">
+            <ModalHeader>
+                <ModalTitle>@L["AddGradeComponent"]</ModalTitle>
+                <CloseButton Clicked="CloseAddGradeModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Validations @ref="@GradeValidations" Mode="ValidationMode.Auto" ValidateOnLoad="false">
+                    <Field>
+                        <FieldLabel>@L["Name"] *</FieldLabel>
+                        <TextEdit @bind-Text="CurrentGrade.GradeComponentName" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>@L["Order"] *</FieldLabel>
+                        <NumericEdit TValue="int" @bind-Value="CurrentGrade.Order" />
+                    </Field>
+                    <Field>
+                        <FieldLabel>@L["Weight"] *</FieldLabel>
+                        <NumericEdit TValue="int" @bind-Value="CurrentGrade.Weight" />
+                    </Field>
+                </Validations>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseAddGradeModalAsync">@L["Cancel"]</Button>
+                <SubmitButton Form="AddGradeForm" Clicked="SaveGradeAsync" />
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
+
+@* ----- Course Details Modal ----- *@
+<Modal @ref="DetailsModal" Closing="@DetailsModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <ModalHeader>
+            <ModalTitle>@(DetailsCourse is null ? L["Details"] : $"{L["Details"]}: {DetailsCourse.CourseName}")</ModalTitle>
+            <CloseButton Clicked="CloseDetailsModalAsync" />
+        </ModalHeader>
+        <ModalBody>
+            @if (DetailsCourse is null)
+            {
+                <Row class="w-100 align-items-center" style="height: 120px;">
+                    <Column><RadarSpinner /></Column>
+                </Row>
+            }
+            else
+            {
+                <Heading Size="HeadingSize.Is5">@L["CourseSessions"]</Heading>
+                @if (DetailsCourse.CourseSessions?.Any() == true)
+                {
+                    <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true" Class="mb-4">
+                        <Thead>
+                            <Tr>
+                                <Th>@L["Day"]</Th>
+                                <Th>@L["Start"]</Th>
+                                <Th>@L["End"]</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            @foreach (var s in DetailsCourse.CourseSessions)
+                            {
+                                <Tr>
+                                    <Td>@s.Day.ToString()</Td>
+                                    <Td>@s.Time.Start</Td>
+                                    <Td>@s.Time.End</Td>
+                                </Tr>
+                            }
+                        </Tbody>
+                    </Table>
+                }
+                else
+                {
+                    <p class="text-muted">@L["NoDataAvailable"]</p>
+                }
+
+                <Heading Size="HeadingSize.Is5">@L["GradeComponents"]</Heading>
+                @if (DetailsCourse.GradeComponents?.Any() == true)
+                {
+                    <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true">
+                        <Thead>
+                            <Tr>
+                                <Th>@L["Name"]</Th>
+                                <Th>@L["Order"]</Th>
+                                <Th>@L["Weight"]</Th>
+                            </Tr>
+                        </Thead>
+                        <Tbody>
+                            @foreach (var g in DetailsCourse.GradeComponents)
+                            {
+                                <Tr>
+                                    <Td>@g.GradeComponentName</Td>
+                                    <Td>@g.Order</Td>
+                                    <Td>@g.Weight</Td>
+                                </Tr>
+                            }
+                        </Tbody>
+                    </Table>
+                }
+                else
+                {
+                    <p class="text-muted">@L["NoDataAvailable"]</p>
+                }
+            }
+        </ModalBody>
+        <ModalFooter>
+            <Button Color="Color.Secondary" Clicked="CloseDetailsModalAsync">@L["Close"]</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@* ----- Enroll Student Modal ----- *@
+<Modal @ref="EnrollModal" Closing="@EnrollModal.CancelClosingModalWhenFocusLost">
+    <ModalContent Centered="true">
+        <Form id="EnrollForm">
+            <ModalHeader>
+                <ModalTitle>@L["EnrollStudent"]</ModalTitle>
+                <CloseButton Clicked="CloseEnrollModalAsync" />
+            </ModalHeader>
+            <ModalBody>
+                <Field>
+                    <FieldLabel>@L["Filter"]</FieldLabel>
+                    <TextEdit Text="@StudentFilterText" TextChanged="OnStudentFilterTextChangedAsync" />
+                    <Button Class="mt-2" Size="Size.Small" Color="Color.Secondary" Clicked="SearchStudentsAsync">
+                        @L["Search"]
+                    </Button>
+                </Field>
+
+                <DataGrid TItem="StudentDto"
+                          @ref="StudentsGridRef"
+                          Data="AvailableStudents"
+                          ReadData="OnStudentDataGridReadAsync"
+                          TotalItems="StudentTotalCount"
+                          PageSize="StudentPageSize"
+                          ShowPager="true"
+                          Responsive="true"
+                          RowClickable="true"
+                          RowClicked="OnStudentRowClicked"
+                          RowStyling="GetStudentRowStyling">
+                    <DataGridColumns>
+                        <DataGridColumn TItem="StudentDto" Field="FirstName" Caption="@L["FirstName"]">
+                            <DisplayTemplate>@context.FirstName</DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="StudentDto" Field="LastName" Caption="@L["LastName"]">
+                            <DisplayTemplate>@context.LastName</DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="StudentDto" Field="IdentityNumber" Caption="@L["IdentityNumber"]">
+                            <DisplayTemplate>@context.IdentityNumber</DisplayTemplate>
+                        </DataGridColumn>
+                        <DataGridColumn TItem="StudentDto" Field="EmailAddress" Caption="@L["Email"]">
+                            <DisplayTemplate>@context.EmailAddress</DisplayTemplate>
+                        </DataGridColumn>
+                    </DataGridColumns>
+                </DataGrid>
+            </ModalBody>
+            <ModalFooter>
+                <Button Color="Color.Secondary" Clicked="CloseEnrollModalAsync">@L["Cancel"]</Button>
+                <SubmitButton Form="EnrollForm" Clicked="CreateEnrollmentAsync" Disabled="@(SelectedStudentIdValue == Guid.Empty)">
+                    @L["Create"]
+                </SubmitButton>
+            </ModalFooter>
+        </Form>
+    </ModalContent>
+</Modal>
 

@@ -17,4 +17,11 @@ public interface IStudentAppService : IApplicationService
     Task<StudentDto> CreateAsync(StudentCreateDto input);
     Task<StudentDto> UpdateAsync(Guid id, StudentUpdateDto input);
     Task DeleteAsync(Guid id);
+
+    // Returns students eligible to enroll to the given course (paged)
+    Task<PagedResultDto<StudentDto>> GetAvailableStudentListAsync(
+        Guid courseId,
+        string? filterText = null,
+        int skip = 0,
+        int take = 20);
 }

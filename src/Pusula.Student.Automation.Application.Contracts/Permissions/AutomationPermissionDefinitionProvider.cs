@@ -52,7 +52,35 @@ public class AutomationPermissionDefinitionProvider : PermissionDefinitionProvid
         enrollmentPermission.AddChild(AutomationPermissions.Enrollments.Create, L("Permission:Create"));
         enrollmentPermission.AddChild(AutomationPermissions.Enrollments.Edit, L("Permission:Edit"));
         enrollmentPermission.AddChild(AutomationPermissions.Enrollments.Delete, L("Permission:Delete"));
-        
+
+
+        // Enrollments -> AttendanceEntries (child)
+        var attendanceEntriesPermission =
+            enrollmentPermission.AddChild(
+                AutomationPermissions.Enrollments.AttendanceEntries.Default,
+                L("Permission:AttendanceEntries"));
+        attendanceEntriesPermission.AddChild(AutomationPermissions.Enrollments.AttendanceEntries.Create, L("Permission:Create"));
+        attendanceEntriesPermission.AddChild(AutomationPermissions.Enrollments.AttendanceEntries.Edit, L("Permission:Edit"));
+        attendanceEntriesPermission.AddChild(AutomationPermissions.Enrollments.AttendanceEntries.Delete, L("Permission:Delete"));
+
+        // Enrollments -> GradeEntries (child)
+        var gradeEntriesPermission =
+            enrollmentPermission.AddChild(
+                AutomationPermissions.Enrollments.GradeEntries.Default,
+                L("Permission:GradeEntries"));
+        gradeEntriesPermission.AddChild(AutomationPermissions.Enrollments.GradeEntries.Create, L("Permission:Create"));
+        gradeEntriesPermission.AddChild(AutomationPermissions.Enrollments.GradeEntries.Edit, L("Permission:Edit"));
+        gradeEntriesPermission.AddChild(AutomationPermissions.Enrollments.GradeEntries.Delete, L("Permission:Delete"));
+
+        // Enrollments -> TeacherComments (child)
+        var teacherCommentsPermission=
+            enrollmentPermission.AddChild(
+                AutomationPermissions.Enrollments.TeacherComments.Default,
+                L("Permission:TeacherComments"));
+        teacherCommentsPermission.AddChild(AutomationPermissions.Enrollments.TeacherComments.Create, L("Permission:Create"));
+        teacherCommentsPermission.AddChild(AutomationPermissions.Enrollments.TeacherComments.Edit, L("Permission:Edit"));
+        teacherCommentsPermission.AddChild(AutomationPermissions.Enrollments.TeacherComments.Delete, L("Permission:Delete"));
+
         var departmentPermission = myGroup.AddPermission(AutomationPermissions.Departments.Default, L("Permission:Departments"));
         departmentPermission.AddChild(AutomationPermissions.Departments.Create, L("Permission:Create"));
         departmentPermission.AddChild(AutomationPermissions.Departments.Edit, L("Permission:Edit"));

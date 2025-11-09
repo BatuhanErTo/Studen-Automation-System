@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Pusula.Student.Automation.Courses;
 using Pusula.Student.Automation.EntityFrameworkCore;
+using Pusula.Student.Automation.Students;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -138,7 +140,56 @@ public class EfCoreEnrollmentRepository(
 
         return await query.AsNoTracking().ToListAsync(cancellationToken);
     }
+    protected virtual async Task<IQueryable<EnrollmentWithNavigationProperties>> GetQueryForNavigationPropertiesAsync()
+    {
+        var ctx = await GetDbContextAsync();
 
+        var query =
+            from e in ctx.Set<Enrollment>()
+            join c in ctx.Set<Course>() on e.CourseId equals c.Id
+            join s in ctx.Set<StudentEntity>() on e.StudentId equals s.Id
+            select new EnrollmentWithNavigationProperties
+            {
+                Enrollment = e,
+                Course = c,
+                Student = s
+            };
+
+        return query;
+    }
+
+    public virtual async Task<EnrollmentWithNavigationProperties> GetWithNavigationAsync(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var query = await GetQueryForNavigationPropertiesAsync();
+        var item = await query.FirstOrDefaultAsync(x => x.Enrollment.Id == id, cancellationToken);
+        return item ?? throw new EntityNotFoundException(typeof(Enrollment), id);
+    }
+
+    public virtual async Task<List<EnrollmentWithNavigationProperties>> GetListWithNavigationAsync(
+        Guid? courseId = null,
+        Guid? studentId = null,
+        string? sort = null,
+        int maxResultCount = int.MaxValue,
+        int skipCount = 0,
+        CancellationToken cancellationToken = default)
+    {
+        var query = await GetQueryForNavigationPropertiesAsync();
+        query = ApplyFilter(query, courseId, studentId);
+
+        return await query
+            .Skip(skipCount)
+            .Take(maxResultCount)
+            .ToListAsync(cancellationToken);
+    }
+    protected virtual IQueryable<EnrollmentWithNavigationProperties> ApplyFilter(
+        IQueryable<EnrollmentWithNavigationProperties> query,
+        Guid? courseId = null,
+        Guid? studentId = null)
+        => query
+            .WhereIf(courseId.HasValue, x => x.Enrollment.CourseId == courseId)
+            .WhereIf(studentId.HasValue, x => x.Enrollment.StudentId == studentId);
     protected virtual IQueryable<Enrollment> ApplyFilter(
         IQueryable<Enrollment> query,
         Guid? courseId = null,

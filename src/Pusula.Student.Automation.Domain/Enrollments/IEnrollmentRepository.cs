@@ -53,4 +53,16 @@ public interface IEnrollmentRepository : IRepository<Enrollment, Guid>
         Guid courseId,
         Guid studentId,
         CancellationToken cancellationToken = default);
+
+    Task<EnrollmentWithNavigationProperties> GetWithNavigationAsync(
+      Guid id,
+      CancellationToken cancellationToken = default);
+
+    Task<List<EnrollmentWithNavigationProperties>> GetListWithNavigationAsync(
+        Guid? courseId = null,
+        Guid? studentId = null,
+        string? sort = null,
+        int maxResultCount = int.MaxValue,
+        int skipCount = 0,
+        CancellationToken cancellationToken = default);
 }

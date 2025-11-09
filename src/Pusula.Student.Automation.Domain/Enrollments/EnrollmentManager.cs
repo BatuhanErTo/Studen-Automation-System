@@ -129,6 +129,13 @@ public class EnrollmentManager(
                 .WithData("CourseId", enrollment.CourseId)
                 .WithData("CourseSessionId", courseSessionId);
 
+        if (date < DateOnly.FromDateTime(course.StartFrom) || date > DateOnly.FromDateTime(course.EndTo))
+            throw new BusinessException("Attendance.DateOutOfCourseRange")
+                .WithData("CourseId", enrollment.CourseId)
+                .WithData("CourseStartFrom", course.StartFrom)
+                .WithData("CourseEndTo", course.EndTo)
+                .WithData("AttendanceDate", date);
+
         var entry = enrollment.AddAttendanceEntry(date, courseSessionId, attendanceStatus, absentReason);
         await enrollmentRepository.UpdateAsync(enrollment, cancellationToken: cancellationToken);
         return entry;
