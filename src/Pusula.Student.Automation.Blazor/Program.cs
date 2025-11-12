@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using Syncfusion.Blazor;
 
 namespace Pusula.Student.Automation.Blazor;
 
@@ -39,6 +40,7 @@ public class Program
                         .WriteTo.Async(c => c.Console())
                         .WriteTo.Async(c => c.AbpStudio(services));
                 });
+            builder.Services.AddSyncfusionBlazor();
             await builder.AddApplicationAsync<AutomationBlazorModule>();
             var app = builder.Build();
             await app.InitializeApplicationAsync();

@@ -7,12 +7,13 @@ using Pusula.Student.Automation.Enrollments.AttendanceEntries;
 using Pusula.Student.Automation.Enums;
 using Pusula.Student.Automation.Students;
 using Pusula.Student.Automation.Teachers;
+using Syncfusion.Blazor.DropDowns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.Users;
+using YamlDotNet.Core.Tokens;
 
 namespace Pusula.Student.Automation.Blazor.Components.Pages;
 
@@ -24,15 +25,16 @@ public partial class AttendanceEntry
     private IReadOnlyList<CourseDto> TeacherCourses { get; set; } = Array.Empty<CourseDto>();
     private List<StudentDto> EnrolledStudents { get; set; } = new();
     private List<CourseSessionDto> CourseSessions { get; set; } = new();
+    public string[] EnumAttendanceStatusValues = Enum.GetNames<EnumAttendanceStatus>();
 
     private Guid SelectedCourseIdValue { get; set; } = Guid.Empty;
     private Guid SelectedStudentIdValue { get; set; } = Guid.Empty;
     private Guid SelectedCourseSessionId { get; set; } = Guid.Empty;
+    public EnumAttendanceStatus SelectedEnumAttendanceStatus { get; set; } = EnumAttendanceStatus.Present;
 
     private Guid? CurrentEnrollmentId { get; set; }
 
     private DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Today);
-    private int SelectedAttendanceStatus { get; set; } = 0; // 0=Present, 1=Absent
     private string? AbsentReason { get; set; }
 
     protected override async Task OnInitializedAsync()
@@ -67,9 +69,9 @@ public partial class AttendanceEntry
         });
     }
 
-    private async Task OnCourseChanged(Guid value)
+    private async Task OnCourseChanged(ChangeEventArgs<Guid, CourseDto> courseChangeEventArgs)
     {
-        SelectedCourseIdValue = value;
+        SelectedCourseIdValue = courseChangeEventArgs.Value;
 
         SelectedStudentIdValue = Guid.Empty;
         SelectedCourseSessionId = Guid.Empty;
@@ -111,9 +113,9 @@ public partial class AttendanceEntry
         });
     }
 
-    private async Task OnStudentChanged(Guid value)
+    private async Task OnStudentChanged(ChangeEventArgs<Guid, StudentDto> studentChangeEventArgs)
     {
-        SelectedStudentIdValue = value;
+        SelectedStudentIdValue = studentChangeEventArgs.Value;
         SelectedCourseSessionId = Guid.Empty;
         CurrentEnrollmentId = null;
 
@@ -126,17 +128,9 @@ public partial class AttendanceEntry
             }
         });
     }
-
-    private Task OnCourseSessionChanged(Guid value)
+    private Task OnCourseSessionChanged(ChangeEventArgs<Guid, CourseSessionDto> courseSessionChangeEventArgs)
     {
-        SelectedCourseSessionId = value;
-        return Task.CompletedTask;
-    }
-
-    private Task OnAttendanceStatusChanged(int value)
-    {
-        SelectedAttendanceStatus = value;
-        if (SelectedAttendanceStatus == 0) AbsentReason = null;
+        SelectedCourseSessionId = courseSessionChangeEventArgs.Value;
         return Task.CompletedTask;
     }
 
@@ -152,13 +146,13 @@ public partial class AttendanceEntry
                 EnrollmentId = CurrentEnrollmentId.Value,
                 Date = Date,
                 CourseSessionId = SelectedCourseSessionId,
-                AttendanceStatus = (EnumAttendanceStatus)SelectedAttendanceStatus,
+                AttendanceStatus = SelectedEnumAttendanceStatus,
                 AbsentReason = AbsentReason
             });
 
             await UiMessageService.Success("Attendance saved");
             // Optionally reset just the status/reason
-            SelectedAttendanceStatus = 0;
+            SelectedEnumAttendanceStatus = EnumAttendanceStatus.Present;
             AbsentReason = null;
         });
     }

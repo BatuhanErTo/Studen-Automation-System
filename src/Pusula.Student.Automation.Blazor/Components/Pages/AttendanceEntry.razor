@@ -8,6 +8,7 @@
 @using Pusula.Student.Automation.Students
 @using Pusula.Student.Automation.Enrollments
 @using Pusula.Student.Automation.Enrollments.AttendanceEntries
+@using Pusula.Student.Automation.Courses.CourseSessionComponents
 @using Volo.Abp.AspNetCore.Components.Messages
 @using Volo.Abp.AspNetCore.Components.Web.Theming.Layout
 @using Volo.Abp.Users
@@ -28,31 +29,35 @@
             <Column ColumnSize="ColumnSize.Is6">
                 <Field>
                     <FieldLabel>Course</FieldLabel>
-                    <Select TValue="Guid"
-                            SelectedValue="SelectedCourseIdValue"
-                            SelectedValueChanged="OnCourseChanged">
-                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                        @foreach (var c in TeacherCourses)
-                        {
-                            <SelectItem Value="@c.Id">@c.CourseName</SelectItem>
-                        }
-                    </Select>
+                    <SfDropDownList TValue="Guid" 
+                        TItem="CourseDto" 
+                        Placeholder="Select a course"                      
+                        DataSource="@TeacherCourses">
+                        <DropDownListFieldSettings Value="Id" Text="CourseName"></DropDownListFieldSettings>
+                        <DropDownListEvents TValue="Guid" TItem="CourseDto" ValueChange="OnCourseChanged"></DropDownListEvents>
+                    </SfDropDownList>
                 </Field>
             </Column>
 
             <Column ColumnSize="ColumnSize.Is6">
                 <Field>
                     <FieldLabel>Student</FieldLabel>
-                    <Select TValue="Guid"
-                            SelectedValue="SelectedStudentIdValue"
-                            SelectedValueChanged="OnStudentChanged"
-                            Disabled="@(SelectedCourseIdValue == Guid.Empty)">
-                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                        @foreach (var s in EnrolledStudents)
-                        {
-                            <SelectItem Value="@s.Id">@($"{s.FirstName} {s.LastName}")</SelectItem>
-                        }
-                    </Select>
+                    <SfDropDownList TValue="Guid"
+                                    TItem="StudentDto"
+                                    Placeholder="Select a student"
+                                    DataSource="@EnrolledStudents"
+                                    Enabled="@(SelectedCourseIdValue != Guid.Empty)">
+                        <DropDownListFieldSettings Value="Id"></DropDownListFieldSettings>
+                        <DropDownListTemplates TItem="StudentDto">
+                            <ItemTemplate>
+                                <span class='name'>@((context as StudentDto).FirstName) @((context as StudentDto).LastName)</span>
+                            </ItemTemplate>
+                            <ValueTemplate>
+                                <span class='name'>@((context as StudentDto).FirstName) @((context as StudentDto).LastName)</span>
+                            </ValueTemplate>
+                        </DropDownListTemplates>
+                        <DropDownListEvents TValue="Guid" TItem="StudentDto" ValueChange="OnStudentChanged"></DropDownListEvents>
+                    </SfDropDownList>
                 </Field>
             </Column>
         </Row>
@@ -71,35 +76,35 @@
 
                     <Column ColumnSize="ColumnSize.Is4">
                         <Field>
-                            <FieldLabel>Session</FieldLabel>
-                            <Select TValue="Guid"
-                                    SelectedValue="SelectedCourseSessionId"
-                                    SelectedValueChanged="OnCourseSessionChanged">
-                                @if (CourseSessions.Count == 0)
-                                {
-                                    <SelectItem Value="@Guid.Empty">No sessions</SelectItem>
-                                }
-                                else
-                                {
-                                    <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                                    @foreach (var cs in CourseSessions)
-                                    {
-                                        <SelectItem Value="@cs.Id">@($"{cs.Day} {cs.Time.Start}-{cs.Time.End}")</SelectItem>
-                                    }
-                                }
-                            </Select>
+                            <FieldLabel>Session</FieldLabel>     
+                            <SfDropDownList TValue="Guid"
+                                            TItem="CourseSessionDto"
+                                            Placeholder="Select a course session"
+                                            DataSource="@CourseSessions">
+                                <DropDownListFieldSettings Value="Id"></DropDownListFieldSettings>
+                                <DropDownListTemplates TItem="CourseSessionDto">
+                                    <ItemTemplate>
+                                        <span class='name'>@((context as CourseSessionDto).Day) @((context as CourseSessionDto).Time.Start) - @((context as CourseSessionDto).Time.End)</span>
+                                    </ItemTemplate>
+                                    <ValueTemplate>
+                                        <span class='name'>@((context as CourseSessionDto).Day) @((context as CourseSessionDto).Time.Start) - @((context as CourseSessionDto).Time.End)</span>
+                                    </ValueTemplate>
+                                </DropDownListTemplates>
+                                <DropDownListEvents TValue="Guid" TItem="CourseSessionDto" ValueChange="OnCourseSessionChanged"></DropDownListEvents>
+                            </SfDropDownList>
+                            
                         </Field>
                     </Column>
 
                     <Column ColumnSize="ColumnSize.Is4">
                         <Field>
                             <FieldLabel>Status</FieldLabel>
-                            <Select TValue="int"
-                                    SelectedValue="SelectedAttendanceStatus"
-                                    SelectedValueChanged="OnAttendanceStatusChanged">
-                                <SelectItem Value="0">Present</SelectItem>
-                                <SelectItem Value="1">Absent</SelectItem>
-                            </Select>
+                            <SfDropDownList TValue="EnumAttendanceStatus" 
+                                TItem="string" 
+                                Placeholder="Attendance Status" 
+                                DataSource="@EnumAttendanceStatusValues" 
+                                @bind-Value="@SelectedEnumAttendanceStatus">
+                            </SfDropDownList>
                         </Field>
                     </Column>
                 </Row>
@@ -108,7 +113,7 @@
                     <Column>
                         <Field>
                             <FieldLabel>Absent Reason</FieldLabel>
-                            <TextEdit Text="@AbsentReason" TextChanged="(v) => AbsentReason = v" Disabled="@(SelectedAttendanceStatus == 0)" />
+                            <TextEdit Text="@AbsentReason" TextChanged="(v) => AbsentReason = v" Disabled="@(SelectedEnumAttendanceStatus == EnumAttendanceStatus.Present)" />
                         </Field>
                     </Column>
                 </Row>
