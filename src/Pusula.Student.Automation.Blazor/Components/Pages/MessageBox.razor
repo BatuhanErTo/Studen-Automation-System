@@ -28,48 +28,35 @@
 }
 else if (!_studentId.HasValue)
 {
-    <Alert Color="Color.Warning">
-        We couldn't find a student record for the signed-in user.
-    </Alert>
+    <SfMessage Severity="MessageSeverity.Error">We couldn't find a student record for the signed-in user.</SfMessage>
 }
 else if (_items.Count == 0)
 {
-    <Alert Color="Color.Info">
-        You have no teacher comments yet.
-    </Alert>
+    <SfMessage Severity="MessageSeverity.Error"> You have no teacher comments yet.</SfMessage>
 }
 else
 {
     @foreach (var item in _items)
     {
-        <Card class="mb-3">
-            <CardHeader>
-                <strong>@item.CourseName</strong>
-            </CardHeader>
-            <CardBody>
+        <SfCard>
+            <Syncfusion.Blazor.Cards.CardHeader Title="@item.CourseName" />
+            <CardContent>
                 @if (item.Comments.Count == 0)
                 {
                     <p class="text-muted mb-0">No comments for this course.</p>
                 }
                 else
                 {
-                    <Table Responsive="true" Striped="true" Hoverable="true" FullWidth="true" Class="mb-0">
-                        <Thead>
-                            <Tr>
-                                <Th>Comment</Th>
-                            </Tr>
-                        </Thead>
-                        <Tbody>
-                            @foreach (var c in item.Comments)
-                            {
-                                <Tr>
-                                    <Td>@c.Comment</Td>
-                                </Tr>
-                            }
-                        </Tbody>
-                    </Table>
+                    <div>
+                        @foreach (var comment in item.Comments)
+                        {
+                            <div class="mb-3 p-3 border rounded">
+                                <p>@comment.Comment</p>
+                            </div>
+                        }
+                    </div>
                 }
-            </CardBody>
-        </Card>
+            </CardContent>
+        </SfCard>
     }
 }

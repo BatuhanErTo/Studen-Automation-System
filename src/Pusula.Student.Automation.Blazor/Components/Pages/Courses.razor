@@ -278,7 +278,7 @@
 
                     <Field>
                         <FieldLabel>@L["Status"] *</FieldLabel>
-                        <Select TValue="EnumCourseStatus" @bind-Value="NewCourse.Status">
+                        <Select TValue="EnumCourseStatus" @bind-SelectedValue="NewCourse.Status">
                             @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
                             {
                                 <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
@@ -288,7 +288,7 @@
 
                     <Field>
                         <FieldLabel>@L["Teacher"] *</FieldLabel>
-                        <Select TValue="Guid" @bind-Value="NewCourse.TeacherId">
+                        <Select TValue="Guid" @bind-SelectedValue="NewCourse.TeacherId">
                             @foreach (var t in TeachersCollection)
                             {
                                 <SelectItem Value="@t.Id">@t.DisplayName</SelectItem>
@@ -348,7 +348,7 @@
 
                     <Field>
                         <FieldLabel>@L["Status"] *</FieldLabel>
-                        <Select TValue="EnumCourseStatus" @bind-Value="EditingCourse.Status">
+                        <Select TValue="EnumCourseStatus" @bind-SelectedValue="EditingCourse.Status">
                             @foreach (EnumCourseStatus s in Enum.GetValues(typeof(EnumCourseStatus)))
                             {
                                 <SelectItem Value="@s">@L[$"EnumCourseStatus:{s}"]</SelectItem>
@@ -358,7 +358,7 @@
 
                     <Field>
                         <FieldLabel>@L["Teacher"] *</FieldLabel>
-                        <Select TValue="Guid" @bind-Value="EditingCourse.TeacherId">
+                        <Select TValue="Guid" @bind-SelectedValue="EditingCourse.TeacherId">
                             @foreach (var t in TeachersCollection)
                             {
                                 <SelectItem Value="@t.Id">@t.DisplayName</SelectItem>

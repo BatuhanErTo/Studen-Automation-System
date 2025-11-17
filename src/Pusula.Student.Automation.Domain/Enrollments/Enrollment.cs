@@ -124,7 +124,6 @@ public sealed class Enrollment : FullAuditedAggregateRoot<Guid>
         _attendanceEntries.Add(attendanceEntry);
         return attendanceEntry;
     }
-
     public void UpdateAttendanceEntry(
         Guid attendanceEntryId,
         EnumAttendanceStatus attendanceStatus,

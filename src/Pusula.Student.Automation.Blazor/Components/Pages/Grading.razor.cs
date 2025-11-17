@@ -11,8 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp.Application.Dtos;
-using Volo.Abp.Users;
+using Syncfusion.Blazor.DropDowns;
 
 namespace Pusula.Student.Automation.Blazor.Components.Pages;
 [Authorize(Roles = Roles.TeacherRole)]
@@ -65,13 +64,13 @@ public partial class Grading
         });
     }
 
-    private async Task OnCourseChanged(Guid value)
+    private async Task OnCourseChanged(ChangeEventArgs<Guid, CourseDto> courseChangeEventArgs)
     {
-        SelectedCourseIdValue = value;
+        SelectedCourseIdValue = courseChangeEventArgs.Value;
 
-        // reset downstream selections
         SelectedStudentIdValue = Guid.Empty;
         SelectedGradeComponentId = Guid.Empty;
+        CurrentEnrollmentId = null;
         EnrolledStudents.Clear();
         GradeComponents.Clear();
         CurrentEnrollmentId = null;
@@ -87,7 +86,6 @@ public partial class Grading
     {
         await ExecuteSafeAsync(async () =>
         {
-            // Prefer the WithNavigation call to get both Enrollment and Student at once
             var enrollments = await EnrollmentAppService.GetListWithNavigationAsync(new GetEnrollmentsInput
             {
                 CourseId = courseId,
@@ -110,9 +108,9 @@ public partial class Grading
         });
     }
 
-    private async Task OnStudentChanged(Guid value)
+    private async Task OnStudentChanged(ChangeEventArgs<Guid, StudentDto> studentChangeEventArgs)
     {
-        SelectedStudentIdValue = value;
+        SelectedStudentIdValue = studentChangeEventArgs.Value;
         SelectedGradeComponentId = Guid.Empty;
         CurrentEnrollmentId = null;
 
@@ -127,9 +125,9 @@ public partial class Grading
         });
     }
 
-    private Task OnGradeComponentChanged(Guid value)
+    private Task OnGradeComponentChanged(ChangeEventArgs<Guid, GradeComponentDto> gradeComponentChangeEventArgs)
     {
-        SelectedGradeComponentId = value;
+        SelectedGradeComponentId = gradeComponentChangeEventArgs.Value;
         return Task.CompletedTask;
     }
 

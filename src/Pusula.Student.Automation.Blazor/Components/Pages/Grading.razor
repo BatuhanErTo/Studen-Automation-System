@@ -4,6 +4,7 @@
 @using Pusula.Student.Automation.Enums
 @using Pusula.Student.Automation.Shared
 @using Pusula.Student.Automation.Courses
+@using Pusula.Student.Automation.Courses.GradeComponents
 @using Pusula.Student.Automation.Teachers
 @using Pusula.Student.Automation.Students
 @using Pusula.Student.Automation.Enrollments
@@ -28,30 +29,34 @@
             <Column ColumnSize="ColumnSize.Is6">
                 <Field>
                     <FieldLabel>Course</FieldLabel>
-                    <Select TValue="Guid"
-                            SelectedValue="SelectedCourseIdValue"
-                            SelectedValueChanged="OnCourseChanged">
-                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                        @foreach (var c in TeacherCourses)
-                        {
-                            <SelectItem Value="@c.Id">@c.CourseName</SelectItem>
-                        }
-                    </Select>
+                    <SfDropDownList TValue="Guid"
+                                    TItem="CourseDto"
+                                    Placeholder="Select a course"
+                                    DataSource="@TeacherCourses">
+                        <DropDownListFieldSettings Value="Id" Text="CourseName"></DropDownListFieldSettings>
+                        <DropDownListEvents TValue="Guid" TItem="CourseDto" ValueChange="OnCourseChanged"></DropDownListEvents>
+                    </SfDropDownList>
                 </Field>
             </Column>
             <Column ColumnSize="ColumnSize.Is6">
                 <Field>
                     <FieldLabel>Student</FieldLabel>
-                    <Select TValue="Guid"
-                            SelectedValue="SelectedStudentIdValue"
-                            SelectedValueChanged="OnStudentChanged"
-                            Disabled="@(SelectedCourseIdValue == Guid.Empty)">
-                        <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                        @foreach (var s in EnrolledStudents)
-                        {
-                            <SelectItem Value="@s.Id">@($"{s.FirstName} {s.LastName}")</SelectItem>
-                        }
-                    </Select>
+                    <SfDropDownList TValue="Guid"
+                                    TItem="StudentDto"
+                                    Placeholder="Select a student"
+                                    DataSource="@EnrolledStudents"
+                                    Enabled="@(SelectedCourseIdValue != Guid.Empty)">
+                        <DropDownListFieldSettings Value="Id"></DropDownListFieldSettings>
+                        <DropDownListTemplates TItem="StudentDto">
+                            <ItemTemplate>
+                                <span class='name'>@((context as StudentDto).FirstName) @((context as StudentDto).LastName)</span>
+                            </ItemTemplate>
+                            <ValueTemplate>
+                                <span class='name'>@((context as StudentDto).FirstName) @((context as StudentDto).LastName)</span>
+                            </ValueTemplate>
+                        </DropDownListTemplates>
+                        <DropDownListEvents TValue="Guid" TItem="StudentDto" ValueChange="OnStudentChanged"></DropDownListEvents>
+                    </SfDropDownList>
                 </Field>
             </Column>
         </Row>
@@ -64,22 +69,35 @@
                     <Column ColumnSize="ColumnSize.Is6">
                         <Field>
                             <FieldLabel>Grade Component</FieldLabel>
-                            <Select TValue="Guid"
-                                    SelectedValue="SelectedGradeComponentId"
-                                    SelectedValueChanged="OnGradeComponentChanged">
-                                @if (GradeComponents.Count == 0)
-                                {
-                                    <SelectItem Value="@Guid.Empty">No grade components</SelectItem>
-                                }
-                                else
-                                {
-                                    <SelectItem Value="@Guid.Empty">-- Select --</SelectItem>
-                                    @foreach (var g in GradeComponents)
-                                    {
-                                        <SelectItem Value="@g.Id">@g.GradeComponentName (@g.Weight)</SelectItem>
-                                    }
-                                }
-                            </Select>
+                            @if (GradeComponents.Count == 0)
+                            {
+                                <div class="text-muted">There is no grade component defined for selected course</div>
+                            }
+                            else
+                            {
+                                <SfDropDownList TValue="Guid"
+                                                TItem="GradeComponentDto"
+                                                Placeholder="Select a grade component"
+                                                DataSource="@GradeComponents">
+                                    <DropDownListFieldSettings Value="Id"></DropDownListFieldSettings>
+                                    <DropDownListTemplates TItem="GradeComponentDto">
+                                        <ItemTemplate>
+                                            @if (context is GradeComponentDto gc)
+                                            {
+                                                <span class="name">@gc.GradeComponentName (@gc.Weight)</span>
+                                            }
+                                        </ItemTemplate>
+
+                                        <ValueTemplate>
+                                            @if (context is GradeComponentDto gc)
+                                            {
+                                                <span class="name">@gc.GradeComponentName (@gc.Weight)</span>
+                                            }
+                                        </ValueTemplate>
+                                    </DropDownListTemplates>
+                                    <DropDownListEvents TValue="Guid" TItem="GradeComponentDto" ValueChange="OnGradeComponentChanged"></DropDownListEvents>
+                                </SfDropDownList>
+                            }
                         </Field>
                     </Column>
                     <Column ColumnSize="ColumnSize.Is6">

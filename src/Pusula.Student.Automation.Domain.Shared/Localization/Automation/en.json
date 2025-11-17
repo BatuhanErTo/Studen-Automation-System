@@ -1,7 +1,7 @@
 {
   "culture": "en",
   "texts": {
-    "AppName": "Student Automation",
+    "AppName": "Student Automation System",
     "ChoosePhoto": "Choose pshoto",
     "Dark": "Dark",
     "DeviceTheme": "Device theme",
@@ -109,6 +109,8 @@
     "NoDataAvailable": "No data available",
     "SuccessfullyDeleted": "Successfully deleted",
     "UploadFailedMessage": "Upload Failed: Unsupported file format or file size too large. Please ensure the file meets the required format and size limits, and try again.",
-    "UserNameAlreadyTaken": "The user name is already taken."
+    "UserNameAlreadyTaken": "The user name is already taken.",
+
+    "ProjectName":  "Student Automation System"
   }
 }

@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Users;
 using Pusula.Student.Automation.Enums;
+using Microsoft.AspNetCore.Components;
+using Syncfusion.Blazor.DropDowns;
 
 namespace Pusula.Student.Automation.Blazor.Components.Pages;
 
@@ -62,9 +64,9 @@ public partial class TeacherComment
         });
     }
 
-    private async Task OnCourseChanged(Guid value)
+    private async Task OnCourseChanged(ChangeEventArgs<Guid, CourseDto> courseChangeEventArgs)
     {
-        SelectedCourseIdValue = value;
+        SelectedCourseIdValue = courseChangeEventArgs.Value;
 
         SelectedStudentIdValue = Guid.Empty;
         CurrentEnrollmentId = null;
@@ -95,9 +97,9 @@ public partial class TeacherComment
         });
     }
 
-    private async Task OnStudentChanged(Guid value)
+    private async Task OnStudentChanged(ChangeEventArgs<Guid, StudentDto> studentChangeEventArgs)
     {
-        SelectedStudentIdValue = value;
+        SelectedStudentIdValue = studentChangeEventArgs.Value;
         CurrentEnrollmentId = null;
         Comments.Clear();
         NewCommentText = string.Empty;
