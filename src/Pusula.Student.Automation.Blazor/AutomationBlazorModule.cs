@@ -52,6 +52,7 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Studio.Client.AspNetCore;
+using Pusula.Student.Automation.Blazor.Middlewares.Logging.Abstract;
 
 namespace Pusula.Student.Automation.Blazor;
 
@@ -323,6 +324,7 @@ public class AutomationBlazorModule : AbpModule
             app.UseMultiTenancy();
         }
 
+        app.UseMiddleware<ILogMiddleware>();
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
