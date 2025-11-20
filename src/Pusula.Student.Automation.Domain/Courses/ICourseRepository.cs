@@ -34,5 +34,5 @@ public interface ICourseRepository : IRepository<Course, Guid>
             CancellationToken cancellationToken = default);
 
     Task<Course> GetWithDetailsAsync(Guid id, bool asNoTracking = false, CancellationToken cancellationToken = default);
-
+    Task<List<Course>> GetCourseListExceedsEndDateAndStatusIsNotCompletedAsync();
 }
