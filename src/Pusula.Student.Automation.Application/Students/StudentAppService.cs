@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.EventBus.Distributed;
 using Volo.Abp.Identity;
 using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
@@ -19,7 +20,8 @@ namespace Pusula.Student.Automation.Students;
 public class StudentAppService(
     IStudentRepository studentRepository,
     StudentManager studentManager,
-    IIdentityUserHelper identityUserHelper) : AutomationAppService, IStudentAppService
+    IIdentityUserHelper identityUserHelper,
+    IDistributedEventBus distributedEventBus) : AutomationAppService, IStudentAppService
 {
     [Authorize(AutomationPermissions.Students.Create)]
     [UnitOfWork]
@@ -58,6 +60,7 @@ public class StudentAppService(
 
     public async Task<StudentDto> GetAsync(Guid id)
     {
+        await distributedEventBus.PublishAsync(new StudentViewedEto { StudentId = id, ViewerId = CurrentUser.Id, ViewedAt = Clock.Now }, onUnitOfWorkComplete: false);
         var student = await studentRepository.GetAsync(id);
         return ObjectMapper.Map<StudentEntity, StudentDto>(student);
     }

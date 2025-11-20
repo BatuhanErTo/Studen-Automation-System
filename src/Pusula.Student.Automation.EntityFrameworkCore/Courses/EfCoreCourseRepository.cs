@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
+using Volo.Abp.Timing;
 
 namespace Pusula.Student.Automation.Courses;
 
@@ -23,6 +24,17 @@ public class EfCoreCourseRepository(IDbContextProvider<AutomationDbContext> dbCo
         var queryable = await GetQueryableAsync();
         var query = ApplyFilter(queryable, filterText, courseName, credits, startFrom, endTo, teacherId);
         return await query.LongCountAsync(cancellationToken);
+    }
+
+    public virtual async Task<List<Course>> GetCourseListExceedsEndDateAndStatusIsNotCompletedAsync()
+    {
+     
+        var now = DateTime.UtcNow;
+        return await (await GetDbSetAsync())
+            .Where(c => c.EndTo < now
+                        && c.Status != EnumCourseStatus.Completed
+                        && c.Status != EnumCourseStatus.Cancelled)
+            .ToListAsync();
     }
 
     public virtual async Task<List<Course>> GetListAsync(string? filterText = null, string? courseName = null, int? credits = null, DateTime? startFrom = null, DateTime? endTo = null, Guid? teacherId = null, string? sort = null, int maxResultCount = int.MaxValue, int skipCount = 0, CancellationToken cancellationToken = default)
