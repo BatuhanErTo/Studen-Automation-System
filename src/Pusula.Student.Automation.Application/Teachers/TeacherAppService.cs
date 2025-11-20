@@ -98,7 +98,7 @@ public class TeacherAppService(
         };
     }
 
-    public virtual async Task<PagedResultDto<TeacherWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetTeachersInput input)
+    public virtual async Task<PagedResultDto<TeacherWithNavigationPropertiesDto>> GetPagedListWithNavigationAsync(GetTeachersInput input)
     {
         long totalCount = await teacherRepository.GetCountAsync(
             input.FilterText, 
@@ -147,7 +147,7 @@ public class TeacherAppService(
             input.ConcurrencyStamp);
         return ObjectMapper.Map<Teacher, TeacherDto>(updatedTeacher);
     }
-    // give better naming to make the purpose more clear
+
     public virtual async Task<List<TeacherDto>> GetListAsync()
     {
         var items = await teacherRepository.GetListAsync(
@@ -156,5 +156,11 @@ public class TeacherAppService(
             skipCount: 0);
 
         return ObjectMapper.Map<List<Teacher>, List<TeacherDto>>(items);
+    }
+
+    public virtual async Task<List<TeacherWithNavigationPropertiesDto>> GetListWithNavigationAsync()
+    {
+        var items = await teacherRepository.GetListWithNavigationPropertiesAsync();
+        return ObjectMapper.Map<List<TeacherWithNavigationProperties>, List<TeacherWithNavigationPropertiesDto>>(items);
     }
 }

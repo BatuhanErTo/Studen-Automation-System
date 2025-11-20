@@ -41,7 +41,7 @@ public partial class StudentGrade
         {
             var email = CurrentUser.Email ?? string.Empty;
 
-            var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+            var students = await StudentAppService.GetPagedListWithNavigationAsync(new GetStudentsInput
             {
                 EmailAddress = email,
                 MaxResultCount = 1

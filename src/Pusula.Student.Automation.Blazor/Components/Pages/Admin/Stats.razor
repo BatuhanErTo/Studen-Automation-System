@@ -1,0 +1,208 @@
+﻿@page "/stats"
+@attribute [Authorize(Roles = Roles.AdminRole)]
+
+@using Pusula.Student.Automation.Enums
+@using Pusula.Student.Automation.Teachers
+@using Pusula.Student.Automation.Students
+
+@using Syncfusion.Blazor.Charts @*there is an ambiguity problem in MyCourse.razor not put into _Imports.razor for now*@
+
+@inherits AutomationComponentBase
+@inject ITeacherAppService TeacherAppService
+@inject IStudentAppService StudentAppService
+
+<div>
+    <div class="row">
+        <h2>Gender Statistic</h2>
+        <div class="col-md-6">
+            <SfAccumulationChart Title="Teacher Gender Statistics">
+                <AccumulationChartSeriesCollection>
+                    <AccumulationChartSeries DataSource="@TeacherGenderStatisticDetailSource" XName="EnumGender" YName="Quantity"
+                                             Name="Teachers Gender">
+                    </AccumulationChartSeries>
+                </AccumulationChartSeriesCollection>
+                <AccumulationChartLegendSettings Visible="true"></AccumulationChartLegendSettings>
+            </SfAccumulationChart>
+        </div>
+        <div class="col-md-6">
+            <SfAccumulationChart Title="Student Gender Statistics">
+                <AccumulationChartSeriesCollection>
+                    <AccumulationChartSeries DataSource="@StudentGenderStatisticDetailSource" XName="EnumGender" YName="Quantity"
+                                             Name="Student Gender">
+                    </AccumulationChartSeries>
+                </AccumulationChartSeriesCollection>
+                <AccumulationChartLegendSettings Visible="true"></AccumulationChartLegendSettings>
+            </SfAccumulationChart>
+        </div>
+    </div>
+    <div class="row">
+        <h2>Department Distribution Statistic</h2>
+        <div class="col-md-6">
+            <SfAccumulationChart Title="Teacher Department Statistics">
+                <AccumulationChartSeriesCollection>
+                    <AccumulationChartSeries DataSource="@TeacherDeparmentStatisticDetailSource" XName="DepartmentName" YName="Quantity"
+                                             Name="Teachers by department distribution">
+                    </AccumulationChartSeries>
+                </AccumulationChartSeriesCollection>
+                <AccumulationChartLegendSettings Visible="true"></AccumulationChartLegendSettings>
+            </SfAccumulationChart>
+        </div>
+        <div class="col-md-6">
+            <SfAccumulationChart Title="Student Department Statistics">
+                <AccumulationChartSeriesCollection>
+                    <AccumulationChartSeries DataSource="@StudentDepartmentStatisticDetailSource" XName="DepartmentName" YName="Quantity"
+                                             Name="Students by department distribution">
+                    </AccumulationChartSeries>
+                </AccumulationChartSeriesCollection>
+                <AccumulationChartLegendSettings Visible="true"></AccumulationChartLegendSettings>
+            </SfAccumulationChart>
+        </div>
+    </div>
+
+    <div class="row">
+        <h2>Course Statistic</h2>
+        <div class="col-12">
+            <SfChart>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Number of Courses By Teacher" Interval="1"></ChartPrimaryYAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@TeacherCourseStatisticDetailSource" XName="FullName" YName="Quantity" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                </ChartSeriesCollection>
+            </SfChart>
+        </div>
+        <div class="col-12 mt-3">
+            <SfChart>
+                <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.Category"></ChartPrimaryXAxis>
+                <ChartPrimaryYAxis Title="Number of Enrollments By Student" Interval="1"></ChartPrimaryYAxis>
+                <ChartSeriesCollection>
+                    <ChartSeries DataSource="@StudentCourseStatisticDetailSource" XName="FullName" YName="Quantity" Type="ChartSeriesType.Column">
+                    </ChartSeries>
+                </ChartSeriesCollection>
+            </SfChart>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private const double MINIMUM_STATISTIC_QUANTITY = 0.0;
+
+    public class GenderStatisticDetail
+    {
+        public EnumGender EnumGender { get; set; }
+        public double Quantity { get; set; }
+    }
+
+    public class DepartmentStatisticDetail
+    {
+        public string DepartmentName { get; set; } = null!;
+        public double Quantity { get; set; }
+    }
+
+    public class CourseStatisticDetail
+    {
+        public string FullName { get; set; } = null!;
+        public double Quantity { get; set; }
+    }
+
+
+
+    public IReadOnlyList<GenderStatisticDetail> TeacherGenderStatisticDetailSource = [];
+    public IReadOnlyList<GenderStatisticDetail> StudentGenderStatisticDetailSource = [];
+
+    public IReadOnlyList<DepartmentStatisticDetail> TeacherDeparmentStatisticDetailSource = [];
+    public IReadOnlyList<DepartmentStatisticDetail> StudentDepartmentStatisticDetailSource = [];
+
+    public IReadOnlyList<CourseStatisticDetail> TeacherCourseStatisticDetailSource = [];
+    public IReadOnlyList<CourseStatisticDetail> StudentCourseStatisticDetailSource = [];
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTeacherGenderStatisticsAsync();
+        await LoadStudentGenderStatisticsAsync();
+
+        var teacherListWithNavigation = await TeacherAppService.GetListWithNavigationAsync();
+        var studentListWithNavigation = await StudentAppService.GetListWithNavigationAsync();
+
+        LoadTeacherDepartmentStatisticsAsync(teacherListWithNavigation);
+        LoadStudentDepartmentStatisticsAsync(studentListWithNavigation);
+
+        LoadTeacherCourseStatisticsAsync(teacherListWithNavigation);
+        LoadStudentCourseStatisticsAsync(studentListWithNavigation);
+    }
+
+    private async Task LoadTeacherGenderStatisticsAsync()
+    {
+        var teacherList = await TeacherAppService.GetListAsync();
+        TeacherGenderStatisticDetailSource = teacherList
+            .GroupBy(t => t.EnumGender)
+            .Select(g => new GenderStatisticDetail
+                {
+                    EnumGender = g.Key,
+                    Quantity = g.Count()
+                }
+            ).ToList();
+    }
+
+    private async Task LoadStudentGenderStatisticsAsync()
+    {
+        var studentList = await StudentAppService.GetListAsync();
+        StudentGenderStatisticDetailSource = studentList
+            .GroupBy(t => t.Gender)
+            .Select(g => new GenderStatisticDetail
+            {
+                EnumGender = g.Key,
+                Quantity = g.Count()
+            }
+            ).ToList();
+    }
+
+    private void LoadTeacherDepartmentStatisticsAsync(List<TeacherWithNavigationPropertiesDto> teacherWithNavigationPropertiesDtoList)
+    {
+        TeacherDeparmentStatisticDetailSource = teacherWithNavigationPropertiesDtoList
+            .GroupBy(t => t.DepartmentDto.DepartmentName)
+            .Select(g => new DepartmentStatisticDetail
+                {
+                    DepartmentName = g.Key,
+                    Quantity = g.Count()
+                }
+            ).ToList();
+    }
+
+    private void LoadStudentDepartmentStatisticsAsync(List<StudentWithNavigationPropertiesDto> studentWithNavigationPropertiesDtoList)
+    {
+        StudentDepartmentStatisticDetailSource = studentWithNavigationPropertiesDtoList
+            .GroupBy(t => t.DepartmentDto.DepartmentName)
+            .Select(g => new DepartmentStatisticDetail
+                {
+                    DepartmentName = g.Key,
+                    Quantity = g.Count()
+                }
+            ).ToList();
+    }
+
+    private void LoadTeacherCourseStatisticsAsync(List<TeacherWithNavigationPropertiesDto> teacherWithNavigationPropertiesDtoList)
+    {
+        TeacherCourseStatisticDetailSource = teacherWithNavigationPropertiesDtoList
+            .Select(g => new CourseStatisticDetail
+            {
+                FullName = string.Format("{0} {1}", g.TeacherDto.FirstName, g.TeacherDto.LastName),
+                Quantity = g.CourseDtos?.Count ?? MINIMUM_STATISTIC_QUANTITY
+            })
+            .ToList();
+    }
+
+    private void LoadStudentCourseStatisticsAsync(List<StudentWithNavigationPropertiesDto> studentWithNavigationPropertiesDtoList)
+    {
+        StudentCourseStatisticDetailSource = studentWithNavigationPropertiesDtoList
+            .Select(g => new CourseStatisticDetail
+            {
+                FullName = string.Format("{0} {1}", g.StudentDto.FirstName, g.StudentDto.LastName),
+                Quantity = g.EnrollmentDtos?.Count ?? MINIMUM_STATISTIC_QUANTITY
+            })
+            .ToList();
+    }
+}

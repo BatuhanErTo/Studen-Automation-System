@@ -192,7 +192,7 @@ public partial class Students
         Filter.SkipCount = (CurrentPage - 1) * PageSize;
         Filter.Sorting = CurrentSorting;
 
-        var result = await StudentAppService.GetListWithNavigationAsync(Filter);
+        var result = await StudentAppService.GetPagedListWithNavigationAsync(Filter);
         StudentList = result.Items;
         TotalCount = (int)result.TotalCount;
 

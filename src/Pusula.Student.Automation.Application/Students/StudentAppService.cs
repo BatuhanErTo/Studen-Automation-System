@@ -2,6 +2,7 @@
 using Pusula.Student.Automation.Enums;
 using Pusula.Student.Automation.Helper.Identity;
 using Pusula.Student.Automation.Permissions;
+using Pusula.Student.Automation.Teachers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Identity;
+using Volo.Abp.ObjectMapping;
 using Volo.Abp.Uow;
 
 namespace Pusula.Student.Automation.Students;
@@ -78,7 +80,23 @@ public class StudentAppService(
         };
     }
 
-    public virtual async Task<PagedResultDto<StudentWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetStudentsInput input)
+    public virtual async Task<List<StudentDto>> GetListAsync()
+    {
+        var items = await studentRepository.GetListAsync(
+            sort: "FirstName asc, LastName asc",
+            maxResultCount: int.MaxValue,
+            skipCount: 0);
+
+        return ObjectMapper.Map<List<StudentEntity>, List<StudentDto>>(items);
+    }
+
+    public virtual async Task<List<StudentWithNavigationPropertiesDto>> GetListWithNavigationAsync()
+    {
+        var items = await studentRepository.GetListWithNavigationPropertiesAsync();
+        return ObjectMapper.Map<List<StudentWithNavigationProperties>, List<StudentWithNavigationPropertiesDto>>(items);
+    }
+
+    public virtual async Task<PagedResultDto<StudentWithNavigationPropertiesDto>> GetPagedListWithNavigationAsync(GetStudentsInput input)
     {
         long totalCount = await studentRepository.GetCountAsync(
             input.FilterText,

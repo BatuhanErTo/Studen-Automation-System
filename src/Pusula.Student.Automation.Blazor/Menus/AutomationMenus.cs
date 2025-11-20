@@ -15,4 +15,5 @@ public class AutomationMenus
     public const string TeacherComment = Prefix + ".TeacherComment";
     public const string StudentGrade = Prefix + ".StudentGrade";
     public const string MessageBox = Prefix + ".MessageBox";
+    public const string Stats = Prefix + ".Stats";
 }

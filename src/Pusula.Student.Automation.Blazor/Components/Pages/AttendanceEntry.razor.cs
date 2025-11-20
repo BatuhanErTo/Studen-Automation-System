@@ -21,7 +21,7 @@ public partial class AttendanceEntry
 {
     private Guid? CurrentTeacherId { get; set; }
 
-    private IReadOnlyList<CourseDto> TeacherCourses { get; set; } = Array.Empty<CourseDto>();
+    private IReadOnlyList<CourseDto> TeacherCourses { get; set; } = [];
     private List<StudentDto> EnrolledStudents { get; set; } = new();
     private List<CourseSessionDto> CourseSessions { get; set; } = new();
     public string[] EnumAttendanceStatusValues = Enum.GetNames<EnumAttendanceStatus>();

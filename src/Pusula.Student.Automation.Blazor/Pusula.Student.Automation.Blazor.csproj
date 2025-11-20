@@ -26,8 +26,10 @@
     <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
     <PackageReference Include="Serilog.Sinks.Elasticsearch" Version="10.0.0" />
     <PackageReference Include="Syncfusion.Blazor.Cards" Version="31.2.10" />
+    <PackageReference Include="Syncfusion.Blazor.Charts" Version="31.2.12" />
     <PackageReference Include="Syncfusion.Blazor.DropDowns" Version="31.2.5" />
     <PackageReference Include="Syncfusion.Blazor.Themes" Version="31.2.5" />
+    <PackageReference Include="Syncfusion.Licensing" Version="31.2.12" />
   </ItemGroup>
 
   <ItemGroup>
@@ -75,5 +77,7 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties /></VisualStudio></ProjectExtensions>
 
 </Project>

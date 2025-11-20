@@ -73,6 +73,14 @@ public class AutomationMenuContributor : IMenuContributor
                     url: "/courses",
                     icon: "fa fa-book")
             );
+
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    AutomationMenus.Stats,
+                    l["Menu:Stats"],
+                    url: "/stats",
+                    icon: "fa fa-chart-bar")
+            );
         }
 
         if (currentUser.IsInRole(Roles.TeacherRole))

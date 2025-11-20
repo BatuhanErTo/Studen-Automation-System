@@ -34,7 +34,7 @@ public partial class MessageBox
             // Resolve student by current user email
             var email = CurrentUser.Email ?? string.Empty;
 
-            var students = await StudentAppService.GetListWithNavigationAsync(new GetStudentsInput
+            var students = await StudentAppService.GetPagedListWithNavigationAsync(new GetStudentsInput
             {
                 EmailAddress = email,
                 MaxResultCount = 1

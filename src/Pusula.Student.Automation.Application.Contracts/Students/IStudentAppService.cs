@@ -12,7 +12,9 @@ namespace Pusula.Student.Automation.Students;
 public interface IStudentAppService : IApplicationService
 {
     Task<StudentWithNavigationPropertiesDto> GetWithNavigationAsync(Guid id);
-    Task<PagedResultDto<StudentWithNavigationPropertiesDto>> GetListWithNavigationAsync(GetStudentsInput input);
+    Task<PagedResultDto<StudentWithNavigationPropertiesDto>> GetPagedListWithNavigationAsync(GetStudentsInput input);
+    Task<List<StudentDto>> GetListAsync();
+    Task<List<StudentWithNavigationPropertiesDto>> GetListWithNavigationAsync();
     Task<StudentDto> GetAsync(Guid id);
     Task<StudentDto> CreateAsync(StudentCreateDto input);
     Task<StudentDto> UpdateAsync(Guid id, StudentUpdateDto input);
